@@ -6,7 +6,7 @@
 
 ### General Architecture
 
-![High‑level architecture](docs/architecture_v5.png)
+![High‑level architecture](docs/architecture_v5_white.png)
 
 The optimisation workflow follows six main stages:
 
