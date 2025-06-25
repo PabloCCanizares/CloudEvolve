@@ -1,14 +1,23 @@
 # CloudEvolve – Multi‑Objective Optimization Framework for Cloud Infrastructures
 
-![License](https://img.shields.io/github/license/your-org/cloudevolve)
-
-> **CloudEvolve** is a modular framework for evolving cloud architectures through multi‑objective genetic algorithms (MOGAs). It enables the simultaneous optimisation of energy consumption and performance, integrating seamlessly with simulators such as CloudSim.
+**CloudEvolve** is a modular framework for evolving cloud architectures through multi‑objective genetic algorithms (MOGAs). It enables the simultaneous optimisation of energy consumption and performance, integrating seamlessly with simulators such as CloudSim.
 
 ---
 
-### High‑Level Architecture
+### General Architecture
 
 ![High‑level architecture](docs/architecture_v5.png)
+
+The optimisation workflow follows six main stages:
+
+- **Cloud‑chromosome encoding** – each individual captures a *workload* and its target *cloud model* while tracking the objectives (energy consumption and response time).
+- **Candidate model instantiation** – the chromosome is materialised into one or more *Cloud Configuration Models* (CCMs) that realise the logical architecture.
+- **Simulation & evaluation** – every CCM is executed in the simulation backend to measure the objective metrics.
+- **Selection** – the raw population is Pareto‑sorted; the top individuals are chosen as parents.
+- **Crossover** – selected parents exchange structural segments of their architectures to create offspring CCMs.
+- **Mutation** – random modifications are applied to offspring models, introducing new configurations before they re‑enter the evaluation loop.
+
+The loop repeats until a stopping criterion is met, ultimately yielding the Pareto front of energy‑/performance‑optimal cloud architectures.
 
 ### Class Diagram
 
