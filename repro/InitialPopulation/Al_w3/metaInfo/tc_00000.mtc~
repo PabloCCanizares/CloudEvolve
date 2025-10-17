@@ -1,0 +1,9 @@
+Id: 0
+GroupId: 0
+MutantId: 0
+InputSrc: /localSpace/cloudEnergy/cloudsimStorage/evolutionary/InitialPopulation/As_w1/tcInput/input_00000.tc
+OutputSrc: /localSpace/cloudEnergy/cloudsimStorage/evolutionary/InitialPopulation/As_w1/tcOutput/output_00000.tc
+ExecCommands: 
+isSourceTC: true
+followUpChilds: 
+Description: Source test case

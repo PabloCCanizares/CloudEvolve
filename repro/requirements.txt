@@ -1,0 +1,3 @@
+In order to properly execute CloudEvolve is necessary to accomplish the following requirements:
+* Java 17 or above.
+* CloudsimStorage 1.0.
