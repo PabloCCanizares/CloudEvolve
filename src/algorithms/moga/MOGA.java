@@ -5,17 +5,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import algorithms.Chromosome;
+import algorithms.ChromosomeComparator;
 import algorithms.Fitness;
-import core.Chromosome;
-import core.ChromosomeComparator;
 
-public class MOGA<C extends Chromosome<C>, T extends Comparable<T>>  extends MOGeneticAlgorithm <C,T>{
+public class MOGA<C extends Chromosome<C>, T extends Comparable<T>>  extends MultiObjectiveGeneticAlgorithm <C,T>{
 
 
 	private class ChromosomesComparatorMO implements ChromosomeComparator<C> {
 
 		private final Map<C, T> cache = new WeakHashMap<C, T>();
-
+		private boolean DEBUG_ENABLED = true;
 		public int sort(List<C> chromosomes) {
 
 			LinkedList<LinkedList<MOSolution<C, T>>> dominationFronts;
@@ -24,6 +24,9 @@ public class MOGA<C extends Chromosome<C>, T extends Comparable<T>>  extends MOG
 			solutionList = new LinkedList<MOSolution<C, T>>();
 			int nIndex1, nIndex2;
 
+			if(DEBUG_ENABLED)
+				System.out.println("sort - init");
+			
 			nIndex1 = 0;
 
 			dominationFronts = new LinkedList<LinkedList<MOSolution<C, T>>>();
@@ -73,18 +76,10 @@ public class MOGA<C extends Chromosome<C>, T extends Comparable<T>>  extends MOG
 				}
 				nIndex1++;
 			}
-			// TODO: Ojo aqui.
-			// Aqui hay que empezar a codificar el Pareto Frontier, siguiendo el allgoritmo
-			// de
-			// http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.542.385&rep=rep1&type=pdf
 
-			// Podemos tomar por referencia:
-			// https://github.com/jrivera777/NSGAII/blob/master/src/NSGAII/NSGA2.java
-			/*
-			 * T fit1 = this.fit(chr1); T fit2 = this.fit(chr2); int ret =
-			 * fit1.compareTo(fit2);
-			 */
-
+			if(DEBUG_ENABLED)
+				System.out.println("sort - dominationFronts calculated");
+			
 			// Finalmente, tomamos los cromosomas con rank=1;
 			chromosomes.clear();
 
@@ -110,7 +105,9 @@ public class MOGA<C extends Chromosome<C>, T extends Comparable<T>>  extends MOG
 					dominationFronts.add(nextDominationFront);
 				}
 			}
-
+			if(DEBUG_ENABLED)
+				System.out.println("sort - dominationFronts flattening");
+			
 			// Una vez tenemos el pareto construido, aplanarlo y añadirlo a soluciones.
 			// new LinkedList<LinkedList<MOSolution<C, T>>>();
 			for (LinkedList<MOSolution<C, T>> domFrontI : dominationFronts) {
@@ -118,13 +115,10 @@ public class MOGA<C extends Chromosome<C>, T extends Comparable<T>>  extends MOG
 					chromosomes.add(domIndiv.getIndividual());
 				}
 			}
-			// TODO: Construir el frente de pareto del todo, y ordenarlos por el frente
-			// TODO: Cuidado con los -1 de las soluciones inválidas!
-			/*
-			 * for(MOSolution<C, T> moSol: solutionList) { if(moSol.getRank() == 1) {
-			 * chromosomes.add(moSol.getIndividual()); } }
-			 */
 
+			if(DEBUG_ENABLED)
+				System.out.println("sort - end");
+			
 			return 1;
 		}
 
@@ -155,8 +149,9 @@ public class MOGA<C extends Chromosome<C>, T extends Comparable<T>>  extends MOG
 	private final ChromosomesComparatorMO chromosomesComparator;
 	private CartesianDistanceComparator<C> distanceComparator;
 	private final Fitness<C, T> fitnessFunc;
-	private PopulationMO<C> population;
-
+	//private PopulationMO<C> population;
+	private boolean DEBUG_ENABLED = true;
+	
 	public MOGA(PopulationMO<C> population, Fitness<C, T> fitnessFunc) {
 		this.population = population;
 		this.fitnessFunc = fitnessFunc;
@@ -167,6 +162,9 @@ public class MOGA<C extends Chromosome<C>, T extends Comparable<T>>  extends MOG
 
 
 	public void evolve() {
+		if(DEBUG_ENABLED)
+			System.out.println("evolve - init");
+		
 		int parentPopulationSize = this.population.getSize();
 
 		PopulationMO<C> newPopulation = new PopulationMO<C>();
@@ -214,9 +212,16 @@ public class MOGA<C extends Chromosome<C>, T extends Comparable<T>>  extends MOG
 		// newPopulation.trim(parentPopulationSize);
 		newPopulation.trim(POPULATION_MAX_SIZE);
 		this.population = newPopulation;
+		
+		if(DEBUG_ENABLED)
+			System.out.println("evolve - end");
 	}
 
 	public void evolve(int count) {
+		
+		if(DEBUG_ENABLED)
+			System.out.println("evolve:count - init");
+		
 		this.terminate = false;
 
 		for (int i = 0; i < count; i++) {
@@ -226,6 +231,9 @@ public class MOGA<C extends Chromosome<C>, T extends Comparable<T>>  extends MOG
 			this.evolve();
 			double minPoint = Double.MAX_VALUE;
 			double maxPoint = 0.0;
+			if(DEBUG_ENABLED)
+				System.out.println("evolve:count - calculating min and max");
+			
 			// newPopulation.trim(parentPopulationSize);
 			for (EGAObjectives obj : EGAObjectives.values()) {
 				for (int i1 = 0; i1 < this.population.getSize(); i1++) {
@@ -243,12 +251,17 @@ public class MOGA<C extends Chromosome<C>, T extends Comparable<T>>  extends MOG
 				maxPoint = 0.0;
 			}
 
+			if(DEBUG_ENABLED)
+				System.out.println("evolve:count - sorting population");
+			
 			this.population.sortPopulationByFitness(distanceComparator);
 			this.iteration = i;
 			for (IMOIterationListener<C, T> l : this.iterationListeners) {
 				l.update(this);
 			}
 		}
+		if(DEBUG_ENABLED)
+			System.out.println("evolve:count - end");
 	}
 	@Override
 	public T fitness(C chromosome) {

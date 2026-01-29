@@ -3,6 +3,11 @@ package executor;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Locale;
+
 import configuration.EAController;
 import configuration.LogLevel;
 import dataParser.TestCaseInput;
@@ -126,7 +131,11 @@ public class MT_Handler {
 
 	private boolean executeCloudSim(MetaTestCase metaTC, String strCloudXml, String strPathOutput, int nHosts) {
 
-		return executeCommand("timeout 60 java -jar /localSpace/cloudEnergy/cloudsimStorage/cloudsimStorage.jar --standalone "
+		String simulatorPath, timeoutHeader;
+		
+		simulatorPath = ConfigMT.getSingletonInstance().getSimulatorPath();
+		timeoutHeader = getTimeoutHeader();
+		return executeCommand(timeoutHeader+" 60 java -jar "+simulatorPath+" --standalone "
 				+ metaTC.getFilePath() /* +" &>"+metaTC.getTcOutput() */);
 	}
 
@@ -219,4 +228,51 @@ public class MT_Handler {
 		}
 		return bRet;
 	}
+
+	private static volatile String CMD_PREFIX = null;
+	private static final Object CMD_LOCK = new Object();
+
+	/**
+	 * Detecta el SO una única vez, construye y cachea el prefijo del comando
+	 * (timeout + "java -jar <jar-SO> "). Las siguientes llamadas devuelven
+	 * el valor cacheado e ignoran los parámetros.
+	 */
+	public  String getTimeoutHeader() {
+	    String cached = CMD_PREFIX;
+	    if (cached != null) return cached;
+
+	    synchronized (CMD_LOCK) {
+	        if (CMD_PREFIX != null) return CMD_PREFIX;
+
+	        String os = System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT);
+	        StringBuilder head = new StringBuilder();
+
+	        if (os.contains("mac")) {
+	            String gtimeout = firstExecutable(
+	                "/opt/homebrew/bin/gtimeout",    // Apple Silicon
+	                "/usr/local/bin/gtimeout",       // Intel
+	                "gtimeout"                       // PATH (fallback)
+	            );
+	            head.append(gtimeout);
+
+	        } else if (os.contains("win")) {
+	            head.append("cmd /c ");
+
+	        } else {
+	            head.append("timeout ");
+	        }
+
+	        CMD_PREFIX = head.toString();
+	        return CMD_PREFIX;
+	    }
+	}
+
+    /** Devuelve el primer candidato que existe y es ejecutable; si ninguno, devuelve el último literal. */
+    private  String firstExecutable(String... candidates) {
+        for (int i = 0; i < candidates.length - 1; i++) {
+            Path p = Paths.get(candidates[i]);
+            if (Files.exists(p) && Files.isExecutable(p)) return candidates[i];
+        }
+        return candidates[candidates.length - 1];
+    }
 }

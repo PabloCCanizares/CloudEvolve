@@ -2,7 +2,7 @@ package algorithms.moga;
 
 import java.util.LinkedList;
 
-import core.Chromosome;
+import algorithms.Chromosome;
 
 public class MOSolution<C extends Chromosome, T extends Comparable<T>> {
 

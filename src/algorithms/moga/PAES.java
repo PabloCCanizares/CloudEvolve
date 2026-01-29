@@ -1,18 +1,3 @@
-/*******************************************************************************
- * Copyright 2012 Yuriy Lagodiuk
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *   http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ******************************************************************************/
 package algorithms.moga;
 
 import java.util.LinkedList;
@@ -20,9 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import algorithms.Chromosome;
+import algorithms.ChromosomeComparator;
 import algorithms.Fitness;
-import core.Chromosome;
-import core.ChromosomeComparator;
 
 /**
  * TODO: definir el tamaño del archivo desde los parámetros de entrada, también
@@ -36,7 +21,7 @@ import core.ChromosomeComparator;
  * @param <C>
  * @param <T>
  */
-public class PAES<C extends Chromosome<C>, T extends Comparable<T>>  extends MOGeneticAlgorithm <C,T>{
+public class PAES<C extends Chromosome<C>, T extends Comparable<T>>  extends MultiObjectiveGeneticAlgorithm <C,T>{
 
 	protected class ChromosomesComparatorPAES implements ChromosomeComparator<C>{
 
@@ -174,7 +159,8 @@ public class PAES<C extends Chromosome<C>, T extends Comparable<T>>  extends MOG
 			T fit2 = this.fit(oldSolution);
 
 			int ret = fit1.compareTo(fit2);
-			return 0;
+			
+			return ret;
 		}
 
 	}
@@ -246,33 +232,41 @@ public class PAES<C extends Chromosome<C>, T extends Comparable<T>>  extends MOG
 		//utilizar un bucle while y sólo cambia de indice cuando corresponda
 		C mutated = null;
 		C chrom = basePopulation.getChromosomeByIndex(this.iteration);
-		archive.add(chrom);
-		do {
+		
+		if(chrom != null)
+		{
+			archive.add(chrom);
+			do {
 
-			mutated = chrom.mutate();
+				mutated = chrom.mutate();
 
-			if (mutated != null) {
-				calculateSingleChromosome(mutated);
-				if (mutated.getObjective(EGAObjectives.eENERGY) > 0) {
-					int dominated = isDominated(mutated, chrom);
+				if (mutated != null) {
+					calculateSingleChromosome(mutated);
+					if (mutated.getObjective(EGAObjectives.eENERGY) > 0) {
+						int dominated = isDominated(mutated, chrom);
 
-					// The new chromosome is dominated by its parent
-					if (dominated < 0) {
-						continue;
-					}
-					// the parent is dominated by the mutated chromosome
-					if (dominated > 0) {
-						basePopulation.replace(chrom, mutated);
-						// addToPopulation(mutated);
-						archive.add(mutated);
-						archive.remove(chrom);
-						System.out.println("hasta aquí hemos llegado");
-					} else { // Verify if the new chromosome is dominated by any solution in the archive
-						addToArchive(chrom, mutated);
+						// The new chromosome is dominated by its parent
+						if (dominated < 0) {
+							continue;
+						}
+						// the parent is dominated by the mutated chromosome
+						if (dominated > 0) {
+							basePopulation.replace(chrom, mutated);
+							// addToPopulation(mutated);
+							archive.add(mutated);
+							archive.remove(chrom);
+							System.out.println("hasta aquí hemos llegado");
+						} else { // Verify if the new chromosome is dominated by any solution in the archive
+							addToArchive(chrom, mutated);
+						}
 					}
 				}
-			}
-		} while (mutated == null);
+			} while (mutated == null);
+		}
+		else
+		{
+			System.out.println("The algorithm has problems, NULL ");
+		}
 
 	}
 
@@ -304,15 +298,18 @@ public class PAES<C extends Chromosome<C>, T extends Comparable<T>>  extends MOG
 		this.terminate = false;
 
 		for (int i = 0; i < count; i++) {
+			System.out.println("EVolving iteration "+i);
 			if (this.terminate) {
 				break;
 			}
+			System.out.println("0");
 			this.evolve();
+			System.out.println("0.1");
 			this.iteration = i;
 			this.population = this.archive.getPopulation();
-
+			System.out.println("0.2");
 			double minimPoint = Double.MAX_VALUE;
-
+			System.out.println("1");
 			// newPopulation.trim(parentPopulationSize);
 			double minPoint = Double.MAX_VALUE;
 			double maxPoint = 0.0;
@@ -332,6 +329,7 @@ public class PAES<C extends Chromosome<C>, T extends Comparable<T>>  extends MOG
 				minPoint = Double.MAX_VALUE;
 				maxPoint = 0.0;
 			}
+			System.out.println("2");
 			this.population = this.archive.getPopulation();
 
 			this.population.sortPopulationByFitness(distanceComparator);

@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import core.Chromosome;
+import algorithms.Chromosome;
 
 public class AdaptiveCellGrid<C extends Chromosome<C>> {
 	private List<List<C>> data;

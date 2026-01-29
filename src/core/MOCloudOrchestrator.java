@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.LinkedList;
 
 import algorithms.Fitness;
-import algorithms.moga.MOGeneticAlgorithm;
+import algorithms.moga.MultiObjectiveGeneticAlgorithm;
 import algorithms.moga.PopulationMO;
 import algorithms.moga.GAObjectives;
 import algorithms.moga.IMOIterationListener;
@@ -19,13 +19,14 @@ import dataParser.metadata.MetaParser;
 import dataParser.metadata.MetaTestCase;
 import entities.MOCloudChromosome;
 import executor.MT_Handler;
+import main.ConfigMT;
 import mutation.MutableCloud.MutableCloud;
 import transformations.TestCase2Cloud;
 
 public abstract class MOCloudOrchestrator {
 
 	EAGenerateGraphs graphGen;
-	MOGeneticAlgorithm<MOCloudChromosome, GAObjectives> moAlgorithm;	
+	MultiObjectiveGeneticAlgorithm<MOCloudChromosome, GAObjectives> moAlgorithm;	
 	PopulationMO<MOCloudChromosome> moPopulation;
 	Fitness<MOCloudChromosome, GAObjectives> moFitness;
 	
@@ -34,7 +35,7 @@ public abstract class MOCloudOrchestrator {
 	int nObjectives;
 	String strPathBase, strInitialPopulationPath, strSim;
 	
-	public void doConfigure(String[] args)
+	public void doConfigure(String[] args, String algorithm)
 	{
 		//TODO: Hay que mejorar esto que esta hecho un horror
 		graphGen = new EAGenerateGraphs();
@@ -63,7 +64,12 @@ public abstract class MOCloudOrchestrator {
 					System.out.printf("Selected probability & rule base: %d - %d\n", nProbBase, nRuleBase);
 
 					if (args.length >= 6)
-						strPathBase = args[5].concat("/VEGA/");
+						strPathBase = args[5].concat("/"+ algorithm);
+					
+					if (args.length >= 8)
+					{
+						ConfigMT.getSingletonInstance().setSimulatorPath(args[7]);
+					}
 				}
 			}
 
@@ -91,16 +97,14 @@ public abstract class MOCloudOrchestrator {
 			System.out.printf("Base yet selected: %s", strPathBase);
 
 	}
-	public void setAlgorithm(MOGeneticAlgorithm<MOCloudChromosome, GAObjectives> moAlgorithm)
+	public void setAlgorithm(MultiObjectiveGeneticAlgorithm<MOCloudChromosome, GAObjectives> moAlgorithm)
 	{
 		this.moAlgorithm = moAlgorithm;
 	}
 	public void doEvolution()
 	{
-		for (int nProbLevel = nProbBase; nProbLevel < 3; nProbLevel++) {
-			int nRuleLevel = 1;
-			doEvolution(eSimulator, strPathBase, strInitialPopulationPath, nEvolutionLoops, nProbLevel, nRuleLevel);
-		}
+		int nRuleLevel = 1;
+		doEvolution(eSimulator, strPathBase, strInitialPopulationPath, nEvolutionLoops, nProbBase, nRuleLevel);
 	}
 	public void doEvolution(ECloudSimulator eSimulator, String strPathBase, String strInitialPopulationPath,
 			int nEvolutionLoops, int nProbLevel, int nRuleLevel) {
@@ -161,6 +165,9 @@ public abstract class MOCloudOrchestrator {
 				moFitness = new MOCloudFitness(dInitialConsumption, dInitialSimTime);
 				this.nObjectives = 2;
 	
+				// Creates the genetic algorithm object
+				//AbstractEvolution<MOCloudChromosome, GAObjectives> vega = new VEGA<MOCloudChromosome, GAObjectives>(population, nObjectives, fitnessMO);
+				
 				moAlgorithm = instanceAlgorithm();
 				
 				// Adds a listener
@@ -184,11 +191,12 @@ public abstract class MOCloudOrchestrator {
 		}
 		catch(Exception e)
 		{
-			
+			System.out.println("Error in the evolution phase: "+e.getMessage());
+			EAController.getInstance().resetEngine();
 		}
 	}
 	
-	public abstract MOGeneticAlgorithm<MOCloudChromosome, GAObjectives> instanceAlgorithm();
+	public abstract MultiObjectiveGeneticAlgorithm<MOCloudChromosome, GAObjectives> instanceAlgorithm();
 	
 	private static double[] calculateInitialConsumption(PopulationMO<MOCloudChromosome> basePopulation,
 			ECloudSimulator platformInfo) {
@@ -217,12 +225,13 @@ public abstract class MOCloudOrchestrator {
 					dEnergy = mExecutor.executeSingleTC(metaTC, platformInfo);
 					dSimTime = mExecutor.getdTime();
 					chromosome.setEnergyConsumption(dEnergy);
-					dSimTime = dEnergySimTime[1];
+					dRetESim[0] = dEnergy;
+					dRetESim[1] = dSimTime;
 					chromosome.setTime(dSimTime);
 
 					System.out.printf(
-							"calculateInitialConsumption - The energy consumption of the individual %d is %f kWh\n", i,
-							dEnergy);
+							"calculateInitialConsumption - The energy consumption of the individual %d is %f kWh and time %f\n", i,
+							dEnergy, dSimTime);
 
 					if (dEnergy < dRet)
 						dRetESim[0] = dEnergy;
@@ -295,7 +304,7 @@ public abstract class MOCloudOrchestrator {
 		// Read the initial population, from an specific path.
 		metaTcList = metaParser.loadMetaTcFolder(strPath);
 		if (metaTcList != null) {
-			// TODO:Analizar
+			// TODO: Cuidado, zona caliente de cogido, esto es Unicamente debug
 			// Adding to the folder a friendly identificator
 			int nIndex;
 			strFriendlyName = strPath.replace("/metaInfo", "");
@@ -356,16 +365,16 @@ public abstract class MOCloudOrchestrator {
 	 */
 	private void validateConfiguration() {
 	    StringBuilder sb = new StringBuilder();
-	    // Comprobar simulador
+	    // 1) Comprobar simulador
 	    if (eSimulator == null) {
 	        sb.append("– eSimulator no asignado.\n");
 	    }
-	    // Nº de iteraciones
+	    // 2) Nº de iteraciones
 	    if (nEvolutionLoops <= 0) {
 	        sb.append("– nEvolutionLoops debe ser > 0 (actual: ")
 	          .append(nEvolutionLoops).append(").\n");
 	    }
-	    // Probabilidad y regla deben estar en rango 0–2 y 0–1
+	    // 3) Probabilidad y regla deben estar en rango 0–2 y 0–1
 	    if (nProbBase < 0 || nProbBase > 2) {
 	        sb.append("– nProbBase debe estar entre 0 y 2 (actual: ")
 	          .append(nProbBase).append(").\n");
@@ -374,23 +383,23 @@ public abstract class MOCloudOrchestrator {
 	        sb.append("– nRuleBase debe estar entre 0 y 1 (actual: ")
 	          .append(nRuleBase).append(").\n");
 	    }
-	    // Paths no nulos ni vacíos
+	    // 4) Paths no nulos ni vacíos
 	    if (strPathBase == null || strPathBase.isEmpty()) {
 	        sb.append("– strPathBase no definido.\n");
 	    }
 	    if (strInitialPopulationPath == null || strInitialPopulationPath.isEmpty()) {
 	        sb.append("– strInitialPopulationPath no definido.\n");
 	    }
-	    // strSim tampoco puede faltar
+	    // 5) strSim tampoco puede faltar
 	    if (eSimulator == null && (strSim == null || strSim.isEmpty())) {
 	        sb.append("– strSim no definido.\n");
 	    }
-	    // Si hay errores, abortar
+	    // 6) Si hay errores, abortar
 	    if (sb.length() > 0) {
 	        throw new IllegalStateException("Error en configuración:\n" + sb.toString());
 	    }
 	}
-	private void addListener(MOGeneticAlgorithm<MOCloudChromosome, GAObjectives> algorithm) {
+	private void addListener(MultiObjectiveGeneticAlgorithm<MOCloudChromosome, GAObjectives> algorithm) {
 		// just for pretty print
 		System.out.println(String.format("%s\t%s\t%s", "iter", "fit", "chromosome"));
 
@@ -398,7 +407,7 @@ public abstract class MOCloudOrchestrator {
 		algorithm.addIterationListener(new IMOIterationListener<MOCloudChromosome, GAObjectives>() {
 
 			@Override
-			public void update(MOGeneticAlgorithm<MOCloudChromosome, GAObjectives> algorithm) {
+			public void update(MultiObjectiveGeneticAlgorithm<MOCloudChromosome, GAObjectives> algorithm) {
 
 				MOCloudChromosome best = algorithm.getBest();
 				int iteration = algorithm.getIteration();

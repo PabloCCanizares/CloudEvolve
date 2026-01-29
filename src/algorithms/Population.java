@@ -22,8 +22,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
-import core.Chromosome;
-
 public class Population<C extends Chromosome<C>> implements Iterable<C> {
 
 	private static final int DEFAULT_NUMBER_OF_CHROMOSOMES = 32;

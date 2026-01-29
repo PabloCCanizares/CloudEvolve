@@ -22,8 +22,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
-import core.Chromosome;
-import core.ChromosomeComparator;
+import algorithms.Chromosome;
+import algorithms.ChromosomeComparator;
 
 public class PopulationMO<C extends Chromosome<C>> implements Iterable<C> {
 
@@ -53,8 +53,8 @@ public class PopulationMO<C extends Chromosome<C>> implements Iterable<C> {
 		return this.chromosomes.get(indx);
 	}
 
-	public C getChromosomeByIndex(int indx) {
-		return this.chromosomes.get(indx);
+	public C getChromosomeByIndex(int indx) {		
+		return this.chromosomes.size() > indx ? this.chromosomes.get(indx) : null;
 	}
 
 	public void sortPopulationByFitness(ChromosomeComparator<C> chromosomesComparator) {

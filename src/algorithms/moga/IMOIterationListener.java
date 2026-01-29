@@ -1,7 +1,7 @@
 package algorithms.moga;
 
-import core.Chromosome;
+import algorithms.Chromosome;
 
 public interface IMOIterationListener<C extends Chromosome<C>, T extends Comparable<T>> {
-	void update(MOGeneticAlgorithm<C, T> environment);
+	void update(MultiObjectiveGeneticAlgorithm<C, T> environment);
 }

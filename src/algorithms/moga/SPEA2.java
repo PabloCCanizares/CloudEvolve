@@ -21,11 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import algorithms.Chromosome;
+import algorithms.ChromosomeComparator;
 import algorithms.Fitness;
-import core.Chromosome;
-import core.ChromosomeComparator;
 
-public class SPEA2<C extends Chromosome<C>, T extends Comparable<T>> extends MOGeneticAlgorithm <C,T>{
+public class SPEA2<C extends Chromosome<C>, T extends Comparable<T>> extends MultiObjectiveGeneticAlgorithm <C,T>{
 
 	private static final int POPULATION_MAX_SIZE = 10;
 
@@ -44,7 +44,7 @@ public class SPEA2<C extends Chromosome<C>, T extends Comparable<T>> extends MOG
 
 			dominationFronts = new LinkedList<LinkedList<MOSolution<C, T>>>();
 
-			// Forma facil, rellenamos la lista de soluciones para facilitar el proceso:
+			// Calculamos la función fitness
 			for (C c1 : chromosomes) {
 				moSolIndex1 = new MOSolution<C, T>(c1, this.fit(c1));
 				solutionList.add(nIndex1, moSolIndex1);
@@ -275,9 +275,11 @@ public class SPEA2<C extends Chromosome<C>, T extends Comparable<T>> extends MOG
 				}
 			}
 		}
-
-		newPopulation.sortPopulationByFitness(this.chromosomesComparator);
-
+		//After mutate/crossover, lets invoke the fitness.
+		populationTestPrettyPrint(newPopulation);
+		newPopulation.sortPopulationByFitness(this.chromosomesComparator); //invoke the fitness
+		populationTestPrettyPrint(newPopulation);
+		
 		for (int i = 0; i < newPopulation.getSize(); i++) {
 			C chrom = newPopulation.getChromosomeByIndex(i);
 
@@ -287,7 +289,7 @@ public class SPEA2<C extends Chromosome<C>, T extends Comparable<T>> extends MOG
 				i--;
 			}
 		}
-
+		
 		updateArchive(newPopulation);
 		populationTestPrettyPrint(newPopulation);
 
@@ -312,14 +314,19 @@ public class SPEA2<C extends Chromosome<C>, T extends Comparable<T>> extends MOG
 
 		newPopulation.sortPopulationByFitness(distanceComparator);
 
+		populationTestPrettyPrint(newPopulation);
 		newPopulation.trim(POPULATION_MAX_SIZE * 2);
 		this.population = newPopulation;
+		
+		populationTestPrettyPrint(newPopulation);
+
 	}
 
 	public void updateArchive(PopulationMO<C> newPop) {
 		for (C chrom : newPop)
 			if (chrom.getNumDom() == 0.0)
 				this.archive.addChromosome(chrom);
+		
 		archive.sortPopulationByFitness(fc);
 
 		if (this.archive.getSize() > POPULATION_MAX_SIZE)

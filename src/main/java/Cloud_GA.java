@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Random;
 
 import transformations.TestCase2Cloud;
+import algorithms.Chromosome;
 import algorithms.Fitness;
 import algorithms.GeneticAlgorithm;
 import algorithms.IterationListener;
@@ -31,7 +32,6 @@ import algorithms.moga.EGAObjectives;
 import auxiliar.CommandExecutor;
 import configuration.EAController;
 import configuration.LogLevel;
-import core.Chromosome;
 import dataParser.TestCase;
 import dataParser.TestCaseInput;
 import dataParser.TestCaseParser;

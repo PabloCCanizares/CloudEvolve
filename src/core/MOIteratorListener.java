@@ -1,6 +1,7 @@
 package core;
 
-import algorithms.moga.MOGeneticAlgorithm;
+import algorithms.Chromosome;
+import algorithms.moga.MultiObjectiveGeneticAlgorithm;
 import algorithms.moga.GAObjectives;
 import algorithms.moga.IMOIterationListener;
 import configuration.EAController;
@@ -8,7 +9,7 @@ import entities.MOCloudChromosome;
 
 public class MOIteratorListener<C extends Chromosome<C>, T extends Comparable<T>>{
 	
-	public void update(MOGeneticAlgorithm<MOCloudChromosome, GAObjectives> algorithm) {
+	public void update(MultiObjectiveGeneticAlgorithm<MOCloudChromosome, GAObjectives> algorithm) {
 
 		MOCloudChromosome best = algorithm.getBest();
 		int iteration = algorithm.getIteration();

@@ -25,11 +25,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.WeakHashMap;
 
+import algorithms.Chromosome;
+import algorithms.ChromosomeComparator;
 import algorithms.Fitness;
-import core.Chromosome;
-import core.ChromosomeComparator;
 
-public class NSGAII<C extends Chromosome<C>, T extends Comparable<T>>  extends MOGeneticAlgorithm <C,T> {
+public class NSGAII<C extends Chromosome<C>, T extends Comparable<T>>  extends MultiObjectiveGeneticAlgorithm <C,T> {
 
 
 	private class ChromosomesComparatorMO implements ChromosomeComparator<C> {
@@ -130,6 +130,12 @@ public class NSGAII<C extends Chromosome<C>, T extends Comparable<T>>  extends M
 					chromosomes.add(domIndiv.getIndividual());
 				}
 			}
+			// TODO: Construir el frente de pareto del todo, y ordenarlos por el frente
+			// TODO: Cuidado con los -1 de las soluciones inválidas!
+			/*
+			 * for(MOSolution<C, T> moSol: solutionList) { if(moSol.getRank() == 1) {
+			 * chromosomes.add(moSol.getIndividual()); } }
+			 */
 
 			return 1;
 		}

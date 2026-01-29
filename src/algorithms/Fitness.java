@@ -15,7 +15,6 @@
  ******************************************************************************/
 package algorithms;
 import algorithms.moga.EGAObjectives;
-import core.Chromosome;
 
 public interface Fitness<C extends Chromosome<C>, T extends Comparable<T>> {
 

@@ -39,10 +39,15 @@ public class EAFileHandler {
 		boolean bRet;
 		Date date;
 		SimpleDateFormat dateFormat;
-		File file;
+		File file, fileBase;
 		
 		date = new Date();
 		dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss") ;
+		
+		fileBase = new File(strBasePath);
+		
+		if(!fileBase.exists())
+			fileBase.mkdir();
 		
 		if(!strFriendlyName.isEmpty())
 			strInstanceSessionPath = strBasePath+File.separatorChar+dateFormat.format(date)+"_"+strFriendlyName;

@@ -1,0 +1,62 @@
+package main_scico;
+
+import main.java.Cloud_MO;
+
+public class Launcher {
+
+
+    public static String arrayToString(String[] array, String delimiter) {
+        if (array == null || array.length == 0) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < array.length; i++) {
+            sb.append(array[i]);
+            if (i < array.length - 1) {
+                sb.append(delimiter);
+            }
+        }
+        return sb.toString();
+    }
+    
+	public static void main(String [] args)
+	{
+		String[] aux = new String[9];
+		String strInitialPath;
+		
+		strInitialPath = "/localSpace/cloudEnergy/cloudsimStorage/evolutionary/InitialPopulation/";
+		//Algorithm
+		aux[0] = "eSPEA3";
+		
+		//Simulator
+		aux[1] = "eCloudSimStorage";		
+		
+		//Path of the experiment
+		aux[2] = strInitialPath+"Al_w3";
+		
+		//Number of iterations
+		aux[3] = "100";
+		
+		//Mutation probability: 0->high, 1->mid, 2->low
+		aux[4] = "0";
+		
+		//Rule base (fixed to 1)
+		aux[5] = "1";
+		
+		//Path base (to save the experiments)
+		aux[6] = "/localSpace/cloudEnergy/cloudsimStorage/evolutionary";
+		
+		//Number of re-runs
+		aux[7] = "1";
+		
+		//Simulator .jar path
+		aux[8] = "/localSpace/cloudEnergy/cloudsimStorage/cloudsimStorage-release.jar";
+		
+		System.out.println("Executing the experiment with config: "+arrayToString(aux, "\n"));
+		
+		
+		Cloud_MO.main(aux);
+
+		
+	}
+}

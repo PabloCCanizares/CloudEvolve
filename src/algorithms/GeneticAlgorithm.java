@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import core.Chromosome;
-
 public class GeneticAlgorithm<C extends Chromosome<C>, T extends Comparable<T>> {
 
 	private static final int ALL_PARENTAL_CHROMOSOMES = Integer.MAX_VALUE;

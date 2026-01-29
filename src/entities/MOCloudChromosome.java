@@ -38,6 +38,7 @@ public class MOCloudChromosome  extends AbstractCloudChromosome<MOCloudChromosom
 		switch (obj) {
 		case eENERGY:
 			ret = getEnergyConsumption();
+			break;							//TODO: Aqui no habia break y  .... ko
 		case eTIME:
 			ret = getSimTime();
 		}

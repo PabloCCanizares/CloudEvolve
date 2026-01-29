@@ -20,12 +20,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-
+import algorithms.Chromosome;
 import algorithms.Fitness;
-import core.Chromosome;
 
 public class VEGA<C extends Chromosome<C>, T extends Comparable<T>> 
-			extends MOGeneticAlgorithm <C,T>{
+			extends MultiObjectiveGeneticAlgorithm <C,T>{
 
 	private class ChromosomesComparatorMO implements Comparator<C> {
 

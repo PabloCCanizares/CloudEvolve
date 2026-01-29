@@ -52,7 +52,7 @@ public class EAController {
 		crossoverOperatorList = new LinkedList<EACrossoverOperator>();
 		nMaxInterations = nIterationIndex = nNumTcCreated = 0;
 		mrList = null;
-		eLogLevel = LogLevel.eVERBOSE;
+		eLogLevel = LogLevel.eNORMAL;
 		
 	}
     public static EAController getInstance() {
@@ -244,7 +244,8 @@ public class EAController {
 		expressionRule = new MetamorphicRelation(
 		//Left expression
 	    new RelationalExpression(new LiteralExpression(new Performance(EnumModelValues.eMODEL_M1,CloudComponents.eCOMPONENT_CPU)), //Perf(m1,cpu)
-								 EnumRelationalOperator.eRELATIONAL_GREATER,													   // >		 		
+								 EnumRelationalOperator.eRELATIONAL_GREATER,													   // >
+	    						 //EnumRelationalOperator.eRELATIONAL_LESS,	<- Test purposes												   // > 
 								 new LiteralExpression(new Performance(EnumModelValues.eMODEL_M2,CloudComponents.eCOMPONENT_CPU))),//Perf(m2,cpu)
 	    
 	    //Right Expression
@@ -253,26 +254,23 @@ public class EAController {
 				 new LiteralExpression(new Energy(EnumModelValues.eMODEL_M2))));				//Energy (m2)
 		
 		/////////////////////////////////////////////////////////////////////////////////////////////////////
-		expressionRule2 = new MetamorphicRelation(	
-		//Left expression		
-		new RelationalExpression(new LiteralExpression(new Nmachines(EnumModelValues.eMODEL_M1)), 
+		expressionRule2 = new MetamorphicRelation(		
+			    new RelationalExpression(new LiteralExpression(new Nmachines(EnumModelValues.eMODEL_M1)), 
 										 EnumRelationalOperator.eRELATIONAL_GREATEREQUAL,													   		 		
-										 new LiteralExpression(new Nmachines(EnumModelValues.eMODEL_M2))),
-	    //Right Expression
-	    new RelationalExpression(new LiteralExpression(new Energy(EnumModelValues.eMODEL_M1)),	//Energy (m1)  
-				 EnumRelationalOperator.eRELATIONAL_LESS,										// <
-				 new LiteralExpression(new Energy(EnumModelValues.eMODEL_M2))));				//Energy (m2));
+										 new LiteralExpression(new Nmachines(EnumModelValues.eMODEL_M2))),null);
 				
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		expressionRule4 = new MetamorphicRelation(		
 	    new RelationalExpression(new LiteralExpression(new Performance(EnumModelValues.eMODEL_M1,CloudComponents.eCOMPONENT_HD)), 
-								 EnumRelationalOperator.eRELATIONAL_GREATER,													   		 		
+								 EnumRelationalOperator.eRELATIONAL_GREATER,
+	    						 //EnumRelationalOperator.eRELATIONAL_LESS,
 								 new LiteralExpression(new Performance(EnumModelValues.eMODEL_M2,CloudComponents.eCOMPONENT_HD))),null);
 		
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		expressionRule5 = new MetamorphicRelation(		
 			    new RelationalExpression(new LiteralExpression(new Performance(EnumModelValues.eMODEL_M1,CloudComponents.eCOMPONENT_NET)), 
-										 EnumRelationalOperator.eRELATIONAL_GREATER,													   		 		
+			    				EnumRelationalOperator.eRELATIONAL_GREATER,
+						 		//EnumRelationalOperator.eRELATIONAL_LESS,	<- Test purposes												   		 		
 										 new LiteralExpression(new Performance(EnumModelValues.eMODEL_M2,CloudComponents.eCOMPONENT_NET))),null);
 				
 		if(mrList == null)

@@ -4,10 +4,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import algorithms.Chromosome;
 import algorithms.moga.EGAObjectives;
 import configuration.EAController;
 import configuration.LogLevel;
-import core.Chromosome;
 import dataParser.cloud.input.TcInput_cloud;
 import dataParser.metadata.MetaTestCase;
 import entities.cloud.Cloud;
@@ -17,6 +17,9 @@ import transformations.TestCase2Cloud;
 public class CloudChromosome extends AbstractCloudChromosome<CloudChromosome> {
 
 	private double dEnergyConsumption;
+
+
+	
 
 	@Override
 	public CloudChromosome dup() {
@@ -166,11 +169,5 @@ public class CloudChromosome extends AbstractCloudChromosome<CloudChromosome> {
 	public int[] getObjectivesIndex() {
 		// TODO Auto-generated method stub
 		return null;
-	}
-
-
-	public double getEnergyConsumption() {
-		// TODO Auto-generated method stub
-		return 0;
 	}
 }

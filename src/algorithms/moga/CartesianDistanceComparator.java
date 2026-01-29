@@ -5,7 +5,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import core.Chromosome;
+import algorithms.Chromosome;
 
 public class CartesianDistanceComparator<C extends Chromosome> implements Comparator<C> {
 	private Map<EGAObjectives, Double> minReferencePoint;

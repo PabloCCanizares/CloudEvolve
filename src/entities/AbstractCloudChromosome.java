@@ -4,9 +4,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import algorithms.Chromosome;
 import configuration.EAController;
 import configuration.LogLevel;
-import core.Chromosome;
 import dataParser.cloud.input.TcInput_cloud;
 import dataParser.metadata.MetaTestCase;
 import mutation.MutableCloud.MutableCloud;
