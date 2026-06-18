@@ -1,5 +1,0 @@
-Starting metamorphic testing executor
-Command-line arguments:
-0: --standalone
-1: /home/osboxes/Downloads/master/Cloud_InitialPopulation/InitialPopulation/sample/metaInfo/tc_00000.mtc
-StandAlone mode selected!

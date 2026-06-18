@@ -1,2 +1,9 @@
 /bin/
 /target/
+
+# Editor / OS artifacts
+*~
+.DS_Store
+
+# Simulator run logs
+test.txt
