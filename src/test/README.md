@@ -1,8 +1,20 @@
-# CloudEvolve – Unit Tests
+# CloudEvolve – Unit & Smoke Tests
 
 ## Overview
 
-This document explains how to build and run the JUnit 4 test suite for the **CloudEvolve** project.
+This document explains how to build, run and measure the coverage of the JUnit 4
+test suite for the **CloudEvolve** project.
+
+The suite has two layers:
+
+* **Unit tests** for the pure logic classes (population containers, objective
+  model, comparators, configuration value objects, the entity chromosome and the
+  2D hypervolume math).
+* **Smoke tests** (`MOAlgorithmSmokeTest`) that wire a small population of
+  lightweight dummy individuals to every evolutionary algorithm (MOGA, VEGA,
+  VEGA2, NSGA-II, NSGA-II2, SPEA2, SPEA3, PAES, PAES2) and run a few evolution
+  loops end-to-end, proving the selection / crossover / mutation / dominance
+  pipeline executes without the external simulator.
 
 ## Prerequisites
 
@@ -11,59 +23,89 @@ This document explains how to build and run the JUnit 4 test suite for the **Clo
 | Java    | 17              |
 | Maven   | 3.6             |
 
-The required runtime library (`lib/MT.jar`) is already bundled with the repository and is configured as a system dependency in `pom.xml`.
+The required runtime library (`lib/MT.jar`) is already bundled with the
+repository and is configured as a system dependency in `pom.xml`. It is the only
+external library needed to build and run the tests; the simulator backend
+(`repro/cloudsimStorage.jar`) is **not** required for `mvn test`.
 
 ## Running the Tests
-
-Execute all tests from the repository root:
 
 ```bash
 mvn test
 ```
 
-Maven will compile all sources (which live directly under `src/`) and then run every class whose name ends in `Test`.
-
-### Expected output
+Maven compiles all sources under `src/` and runs every class whose name ends in
+`Test` (excluding the `MT_Test` scratch class). At the time of writing:
 
 ```
-Tests run: 55, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 120, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
-## Test Structure
+### Coverage
 
-Tests are placed alongside the production sources, mirroring the same package layout:
+The JaCoCo plugin produces a coverage report during the `test` phase:
 
-| Test class | Package | Classes under test |
-|---|---|---|
-| `src/algorithms/PopulationTest.java` | `algorithms` | `Population` |
-| `src/algorithms/GeneticAlgorithmTest.java` | `algorithms` | `GeneticAlgorithm` |
-| `src/algorithms/moga/GAObjectivesTest.java` | `algorithms.moga` | `GAObjectives` |
-| `src/algorithms/moga/EGAObjectivesTest.java` | `algorithms.moga` | `EGAObjectives` |
-| `src/algorithms/moga/MOSolutionTest.java` | `algorithms.moga` | `MOSolution` |
-| `src/entities/MOCloudChromosomeTest.java` | `entities` | `MOCloudChromosome` |
-| `src/configuration/EAConfigTest.java` | `configuration` | `EAConfig` |
-| `src/configuration/LogLevelTest.java` | `configuration` | `LogLevel` |
-| `src/configuration/EAMutationOperatorTest.java` | `configuration` | `EAMutationOperator` |
+```bash
+mvn test
+open target/site/jacoco/index.html
+```
+
+The report scopes coverage to the **testable core** by excluding the
+environment-coupled layer (see *Excluded from coverage* below).
+
+## Scope: what is tested to 100% and what is not
+
+`mvn test` runs against the whole tree, but only a well-defined **testable core**
+is targeted for full coverage. The following classes are at **100% line
+coverage**:
+
+| Class | Package |
+|---|---|
+| `Population` | `algorithms` |
+| `GeneticAlgorithm` (+ inner comparator) | `algorithms` |
+| `PopulationMO` | `algorithms.moga` |
+| `MOSolution` | `algorithms.moga` |
+| `GAObjectives` / `EGAObjectives` | `algorithms.moga` |
+| `CartesianDistanceComparator` | `algorithms.moga` |
+| `MOCloudChromosome` | `entities` |
+| `EAConfig`, `LogLevel`, `EAMutationOperator`, `EACrossoverOperator` | `configuration` |
+| `HV2D`, `Extreme` | `main_scico.hv` |
+
+The nine evolutionary algorithms and `AdaptiveCellGrid` are covered by the smoke
+tests at **75–96%** line coverage (the uncovered remainder is mostly defensive
+branches and the unused PAES comparator `sort()`).
+
+### Excluded from coverage
+
+These are not unit-testable in isolation and are excluded from the JaCoCo report:
+
+* **Simulator-coupled:** `executor.MT_Handler`, `core.MOCloudOrchestrator`,
+  `core.MOCloudFitness` (they shell out to the CloudSim/SimGrid `.jar`).
+* **Filesystem / singleton-coupled:** `configuration.EAController`,
+  `transformations.*`, `auxiliars.*`, `entities.AbstractCloudChromosome`'s
+  `mutate()`/`crossover()` (all route through `EAController` + absolute
+  `/localSpace` paths).
+* **Launchers / scratch:** `main.java.*`, `main_scico.Launcher*`,
+  `main_scico.aux.*`, `main_scico.experiments.*`, `main_scico.hv.refpoint.*` and
+  the log-reading hypervolume utilities (`ParetoAndHVFromLogs`, …) — these have
+  `main()` methods and read experiment outputs from disk.
+* **Dead code:** the `*_old` chromosome classes.
 
 ## Notes
 
-* **External dependencies** – Classes that require a running simulator
-  (`EAController`, `MT_Handler`, `MutableCloud`, etc.) are not exercised at
-  runtime.  `MOCloudChromosomeTest` passes `null` for those references and
-  the production code prints harmless error messages to stdout, which is the
-  expected behaviour when those fields are absent.
-
-* **`EAConfig` singleton** – `EAConfigTest` uses reflection to reset the
-  private static `config` field to `null` in `@Before` so each test starts
-  from a clean state.
-
-* **`GeneticAlgorithm` listener** – The iteration-listener callback is
-  currently commented out in `GeneticAlgorithm.evolve(int)`.
-  `GeneticAlgorithmTest.testAddIterationListener` therefore only verifies
-  that adding a listener and running evolve does not throw an exception.
-
-* **`DummyChromosome` / `DummyFitness`** – Each test class that needs to
-  instantiate `Population` or `GeneticAlgorithm` declares a minimal static
-  inner helper class (`DummyChromosome`, `DummyFitness`) with no-op or
-  simple implementations.  These helpers are **not** production code.
+* **Locale independence** – `MOCloudChromosomeTest.testToString` builds its
+  expected string with the same `String.format` spec as the production code, so
+  it passes on both dot- and comma-decimal locales.
+* **Smoke-test dummies** – `MOAlgorithmSmokeTest` uses a `DummyMOChromosome`
+  whose `mutate()`/`crossover()` always return non-null offspring; this is
+  required by PAES, whose evolve loop spins until a mutation succeeds.
+* **Known issue surfaced by the smoke tests** – `AdaptiveCellGrid` indexes its
+  fixed `divisions²` cell array directly from raw objective values, so it throws
+  `IndexOutOfBoundsException` when the objective range exceeds the grid
+  resolution. The PAES smoke tests size the grid (`bisections = 6`) to avoid it;
+  the underlying class would benefit from a fix.
+* **`EAConfig` singleton** – `EAConfigTest` resets the private static instance via
+  reflection in `@Before` so tests stay independent.
+* **Dummy helpers** are minimal `Chromosome`/`Fitness` implementations declared
+  as static inner classes of each test; they are **not** production code.

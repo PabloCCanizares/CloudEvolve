@@ -69,6 +69,29 @@ public class MOSolutionTest {
         assertEquals(3, solution.getRank());
     }
 
+    /** Verify that inserting the same dominated solution twice keeps only one copy. */
+    @Test
+    public void testInsertDominatedSolutionsIgnoresDuplicates() {
+        MOSolution<DummyChromosome, Integer> dominated =
+                new MOSolution<DummyChromosome, Integer>(new DummyChromosome(1), 1);
+        solution.insertDominatedSolutions(dominated);
+        solution.insertDominatedSolutions(dominated);
+        assertEquals(1, solution.getDominatedIndividuals().size());
+    }
+
+    /** Verify the remaining accessors expose / delegate to the wrapped chromosome. */
+    @Test
+    public void testAccessorsDelegateToChromosome() {
+        assertSame(chromosome, solution.getChromosome());
+        assertEquals(Integer.valueOf(10), solution.getFit());
+        // getObjective and the crowding-distance helpers delegate to the chromosome.
+        assertEquals(42.0, solution.getObjective(EGAObjectives.eENERGY), 1e-9);
+        solution.setCrowdingDistance(2.0);
+        assertEquals(2.0, solution.getCrowdingDistance(), 1e-9);
+        solution.addToCrowdingDistance(0.5);
+        assertEquals(2.5, solution.getCrowdingDistance(), 1e-9);
+    }
+
     // ── Helper class ──────────────────────────────────────────────────────────
 
     /** Minimal Chromosome implementation used only for MOSolution tests. */
@@ -77,6 +100,7 @@ public class MOSolutionTest {
 
         private int value;
         private int rank;
+        private double crowding;
 
         DummyChromosome(int value) {
             this.value = value;
@@ -94,9 +118,9 @@ public class MOSolutionTest {
         @Override public void setFitness() {}
         @Override public double getNumDom() { return 0; }
         @Override public double getFitness() { return value; }
-        @Override public void setCrowdingDistance(double d) {}
-        @Override public void addToCrowdingDistance(double d) {}
-        @Override public double getCrowdingDistance() { return 0; }
+        @Override public void setCrowdingDistance(double d) { this.crowding = d; }
+        @Override public void addToCrowdingDistance(double d) { this.crowding += d; }
+        @Override public double getCrowdingDistance() { return crowding; }
         @Override public int getRank() { return rank; }
         @Override public void setRank(int r) { this.rank = r; }
         @Override public DummyChromosome dup() { return new DummyChromosome(value); }

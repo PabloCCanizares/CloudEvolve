@@ -64,7 +64,68 @@
             Surefire there so it can discover and run them.
           -->
           <testClassesDirectory>${project.build.outputDirectory}</testClassesDirectory>
+          <!--
+            Only run the JUnit test classes (names ending in "Test"). This
+            deliberately drops Surefire's default "Test*" pattern, which would
+            otherwise try to run production/scratch classes such as
+            TestCase2Cloud, TestCaseTransformations, TestExec and TestXml as if
+            they were tests. MT_Test is the one remaining "*Test" scratch class
+            with a main() and no @Test methods, so it is excluded explicitly.
+          -->
+          <includes>
+            <include>**/*Test.java</include>
+          </includes>
+          <excludes>
+            <exclude>**/MT_Test.java</exclude>
+          </excludes>
         </configuration>
+      </plugin>
+      <!--
+        Code coverage. The report excludes the environment-coupled layer that
+        cannot be unit-tested without the external CloudSim/SimGrid simulator,
+        the filesystem (absolute /localSpace paths) or the experiment launchers'
+        main() methods, plus the dead *_old classes. What remains is the
+        "testable core" (MOEA algorithms, entities, configuration value objects,
+        objective model and the 2D hypervolume math), which the suite drives to
+        full line coverage on its pure classes.
+      -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.12</version>
+        <configuration>
+          <excludes>
+            <exclude>main/java/**</exclude>
+            <exclude>main_scico/Launcher*.class</exclude>
+            <exclude>main_scico/aux/**</exclude>
+            <exclude>main_scico/experiments/**</exclude>
+            <exclude>main_scico/hv/refpoint/**</exclude>
+            <exclude>main_scico/hv/HyperVolumePerAlgorithm*.class</exclude>
+            <exclude>main_scico/hv/MaxHyperVolumeFinder*.class</exclude>
+            <exclude>main_scico/hv/ParetoAndHVFromLogs*.class</exclude>
+            <exclude>core/MOCloudOrchestrator*.class</exclude>
+            <exclude>core/MOIteratorListener*.class</exclude>
+            <exclude>core/MOCloudFitness*.class</exclude>
+            <exclude>executor/**</exclude>
+            <exclude>transformations/**</exclude>
+            <exclude>auxiliars/**</exclude>
+            <exclude>configuration/EAController*.class</exclude>
+            <exclude>entities/AbstractCloudChromosome*.class</exclude>
+            <exclude>entities/CloudChromosome*.class</exclude>
+            <exclude>**/*_old*.class</exclude>
+          </excludes>
+        </configuration>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals><goal>prepare-agent</goal></goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals><goal>report</goal></goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
