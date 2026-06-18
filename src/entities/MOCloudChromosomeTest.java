@@ -106,7 +106,14 @@ public class MOCloudChromosomeTest {
         assertNotSame(c, dup);
     }
 
-    /** Verify that toString() uses the format "(id, energy, time)". */
+    /**
+     * Verify that toString() uses the format "(id, energy, time)".
+     * The expected value is built with the same format spec as the production
+     * code so the assertion is locale-independent: {@code %f} renders the
+     * decimal separator according to the default locale (e.g. "1.500000" under
+     * Locale.US, "1,500000" under a comma-decimal locale such as es_ES), and a
+     * hard-coded literal would fail on the latter.
+     */
     @Test
     public void testToString() {
         MOCloudChromosome c = new MOCloudChromosome();
@@ -114,7 +121,8 @@ public class MOCloudChromosomeTest {
         c.setEnergyConsumption(1.5);
         c.setTime(2.5);
         String result = c.toString();
-        assertEquals("(7, 1.500000, 2.500000)", result);
+        String expected = String.format("(%d, %.6f, %f)", 7, 1.5, 2.5);
+        assertEquals(expected, result);
     }
 
     /** Verify that getId() returns the id that was previously set. */

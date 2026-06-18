@@ -1,33 +1,26 @@
 <!--
-  Copyright 2012 Yuriy Lagodiuk
-  
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-  
-    http://www.apache.org/licenses/LICENSE-2.0
-  
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+  CloudEvolve - Multi-Objective Optimization Framework for Cloud Infrastructures
+  Copyright 2025 Pablo C. Cañizares
+
+  Distributed under the MIT License. See the LICENSE file in the project root
+  for the full license text.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.lagodiuk</groupId>
-  <artifactId>ga</artifactId>
-  <version>1.0.2</version>
+  <groupId>com.cloudevolve</groupId>
+  <artifactId>cloudevolve</artifactId>
+  <version>1.0.0</version>
   <packaging>jar</packaging>
 
-  <name>ga</name>
-  <url>http://maven.apache.org</url>
+  <name>CloudEvolve</name>
+  <url>https://github.com/pablocc/CloudEvolve</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <java-version>8</java-version>
+    <!-- CloudEvolve requires Java 17 or above (see repro/requirements.txt). -->
+    <maven.compiler.release>17</maven.compiler.release>
   </properties>
 
   <dependencies>
@@ -36,6 +29,13 @@
       <artifactId>junit</artifactId>
       <version>4.13.2</version>
     </dependency>
+    <!--
+      MT.jar bundles the metamorphic-testing layer (dataParser.*, mutation.*,
+      entities.cloud.*, main.ConfigMT, ...) that the production sources compile
+      and run against. It is the only external library needed to build and run
+      the unit-test suite; the simulator backend (repro/cloudsimStorage.jar) is
+      only required for full end-to-end evolution runs, not for `mvn test`.
+    -->
     <dependency>
       <groupId>local</groupId>
       <artifactId>mt</artifactId>
@@ -52,16 +52,17 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.1</version>
-        <configuration>
-          <source>${java-version}</source>
-          <target>${java-version}</target>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.22.2</version>
         <configuration>
+          <!--
+            Tests live alongside the production sources under src/, so the
+            compiled *Test classes land in the main output directory. Point
+            Surefire there so it can discover and run them.
+          -->
           <testClassesDirectory>${project.build.outputDirectory}</testClassesDirectory>
         </configuration>
       </plugin>

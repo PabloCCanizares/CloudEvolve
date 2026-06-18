@@ -8,7 +8,7 @@ This document explains how to build and run the JUnit 4 test suite for the **Clo
 
 | Tool    | Minimum version |
 |---------|-----------------|
-| Java    | 8               |
+| Java    | 17              |
 | Maven   | 3.6             |
 
 The required runtime library (`lib/MT.jar`) is already bundled with the repository and is configured as a system dependency in `pom.xml`.
