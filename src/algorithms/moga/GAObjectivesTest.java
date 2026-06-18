@@ -49,8 +49,9 @@ public class GAObjectivesTest {
     }
 
     /**
-     * Verify that compareTo returns 1 when this dominates other
-     * (all objectives of this are strictly less than other's).
+     * Pareto convention (minimization): compareTo returns -1 when THIS dominates
+     * the other, i.e. this is no worse on every objective and strictly better on
+     * at least one ("less than" == "better").
      */
     @Test
     public void testCompareToThisDominates() {
@@ -61,8 +62,52 @@ public class GAObjectivesTest {
         other.addObjective(EGAObjectives.eENERGY, 2.0);
         other.addObjective(EGAObjectives.eTIME, 2.0);
 
-        // compareTo returns 1 when at least one objective of this < corresponding in other.
-        assertEquals(1, objectives.compareTo(other));
+        assertEquals(-1, objectives.compareTo(other));
+        // Antisymmetry: the dominated side compares as +1.
+        assertEquals(1, other.compareTo(objectives));
+    }
+
+    /**
+     * Dominance also holds when only one objective is strictly better and the
+     * other is equal.
+     */
+    @Test
+    public void testCompareToDominatesOnSingleObjective() {
+        objectives.addObjective(EGAObjectives.eENERGY, 1.0);
+        objectives.addObjective(EGAObjectives.eTIME, 5.0);
+
+        GAObjectives other = new GAObjectives();
+        other.addObjective(EGAObjectives.eENERGY, 1.0); // equal
+        other.addObjective(EGAObjectives.eTIME, 8.0);   // worse
+
+        assertEquals(-1, objectives.compareTo(other));
+    }
+
+    /** A trade-off pair is mutually non-dominated, so compareTo returns 0 both ways. */
+    @Test
+    public void testCompareToNonDominatedTradeOff() {
+        objectives.addObjective(EGAObjectives.eENERGY, 1.0);
+        objectives.addObjective(EGAObjectives.eTIME, 9.0);
+
+        GAObjectives other = new GAObjectives();
+        other.addObjective(EGAObjectives.eENERGY, 9.0);
+        other.addObjective(EGAObjectives.eTIME, 1.0);
+
+        assertEquals(0, objectives.compareTo(other));
+        assertEquals(0, other.compareTo(objectives));
+    }
+
+    /** Differences smaller than EPS are treated as ties (non-dominated). */
+    @Test
+    public void testCompareToTreatsNearEqualAsTie() {
+        objectives.addObjective(EGAObjectives.eENERGY, 1.0);
+        objectives.addObjective(EGAObjectives.eTIME, 1.0);
+
+        GAObjectives other = new GAObjectives();
+        other.addObjective(EGAObjectives.eENERGY, 1.0 + 1e-12);
+        other.addObjective(EGAObjectives.eTIME, 1.0);
+
+        assertEquals(0, objectives.compareTo(other));
     }
 
     /** Verify that compareTo returns 0 when all objectives are equal. */

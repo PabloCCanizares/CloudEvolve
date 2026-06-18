@@ -179,10 +179,8 @@ public class NSGAII<C extends Chromosome<C>, T extends Comparable<T>>  extends M
 				return false;
 			if (c2.getObjective(EGAObjectives.eENERGY) < 0)
 				return true;
-			int ret = fit1.compareTo(fit2);
-			int ret2 = fit2.compareTo(fit1);
-
-			return ret > ret2;
+			// c1 Pareto-dominates c2 iff its fitness compares as "better" (less than).
+			return fit1.compareTo(fit2) < 0;
 		}
 
 		public T fit(C chr) {

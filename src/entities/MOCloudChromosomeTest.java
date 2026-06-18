@@ -64,32 +64,62 @@ public class MOCloudChromosomeTest {
     }
 
     /**
-     * Verify that dominates() returns true when this chromosome has strictly higher
-     * energy and equal-or-higher time than the other (per the current implementation).
+     * Minimization dominance: a chromosome that is better (smaller) on both
+     * energy and time dominates the other, and the reverse does not hold.
      */
     @Test
-    public void testDominatesReturnsTrueWhenDominates() {
+    public void testDominatesWhenBetterOnBothObjectives() {
         MOCloudChromosome a = new MOCloudChromosome();
-        a.setEnergyConsumption(10.0);
-        a.setTime(5.0);
-
-        MOCloudChromosome b = new MOCloudChromosome();
-        b.setEnergyConsumption(5.0);
-        b.setTime(3.0);
-
-        assertTrue(a.dominates(b));
-    }
-
-    /** Verify that dominates() returns false when this chromosome does not dominate the other. */
-    @Test
-    public void testDominatesReturnsFalseWhenNotDominates() {
-        MOCloudChromosome a = new MOCloudChromosome();
-        a.setEnergyConsumption(3.0);
+        a.setEnergyConsumption(2.0);
         a.setTime(2.0);
 
         MOCloudChromosome b = new MOCloudChromosome();
         b.setEnergyConsumption(5.0);
-        b.setTime(4.0);
+        b.setTime(5.0);
+
+        assertTrue(a.dominates(b));
+        assertFalse(b.dominates(a));
+    }
+
+    /** Dominance also holds when one objective is strictly better and the other is equal. */
+    @Test
+    public void testDominatesWhenBetterOnOneEqualOnOther() {
+        MOCloudChromosome a = new MOCloudChromosome();
+        a.setEnergyConsumption(2.0);
+        a.setTime(5.0);
+
+        MOCloudChromosome b = new MOCloudChromosome();
+        b.setEnergyConsumption(2.0); // equal
+        b.setTime(8.0);              // worse
+
+        assertTrue(a.dominates(b));
+    }
+
+    /** Neither chromosome dominates the other on a trade-off (non-dominated pair). */
+    @Test
+    public void testDoesNotDominateOnTradeOff() {
+        MOCloudChromosome a = new MOCloudChromosome();
+        a.setEnergyConsumption(2.0);
+        a.setTime(8.0);
+
+        MOCloudChromosome b = new MOCloudChromosome();
+        b.setEnergyConsumption(8.0);
+        b.setTime(2.0);
+
+        assertFalse(a.dominates(b));
+        assertFalse(b.dominates(a));
+    }
+
+    /** A chromosome worse on both objectives does not dominate. */
+    @Test
+    public void testDoesNotDominateWhenWorseOnBoth() {
+        MOCloudChromosome a = new MOCloudChromosome();
+        a.setEnergyConsumption(9.0);
+        a.setTime(9.0);
+
+        MOCloudChromosome b = new MOCloudChromosome();
+        b.setEnergyConsumption(2.0);
+        b.setTime(2.0);
 
         assertFalse(a.dominates(b));
     }
@@ -185,18 +215,6 @@ public class MOCloudChromosomeTest {
         c.setMetaTestCase(null);
         assertNull(c.getMetaTC());
         assertNull(c.getMetaTestCase());
-    }
-
-    /** dominates() is also true via the time branch (strictly higher time, equal energy). */
-    @Test
-    public void testDominatesViaTimeBranch() {
-        MOCloudChromosome a = new MOCloudChromosome();
-        a.setEnergyConsumption(5.0);
-        a.setTime(10.0);
-        MOCloudChromosome b = new MOCloudChromosome();
-        b.setEnergyConsumption(5.0);
-        b.setTime(3.0);
-        assertTrue(a.dominates(b));
     }
 
     /** clone() performs a shallow copy of the fixed-size auxiliary vector. */

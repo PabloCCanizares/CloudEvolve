@@ -156,9 +156,8 @@ public class SPEA2<C extends Chromosome<C>, T extends Comparable<T>> extends Mul
 			T fit1 = this.fit(c1);
 			T fit2 = this.fit(c2);
 
-			int ret = fit1.compareTo(fit2);
-			int ret2 = fit2.compareTo(fit1);
-			return ret > ret2;
+			// c1 Pareto-dominates c2 iff its fitness compares as "better" (less than).
+			return fit1.compareTo(fit2) < 0;
 		}
 
 		public T fit(C chr) {

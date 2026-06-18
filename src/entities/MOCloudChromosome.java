@@ -45,12 +45,17 @@ public class MOCloudChromosome  extends AbstractCloudChromosome<MOCloudChromosom
 		return ret;
 	}
 
+	/**
+	 * Pareto dominance for a minimization problem (energy and time are both
+	 * minimized): this chromosome dominates {@code solution2} iff it is no worse
+	 * on both objectives and strictly better on at least one.
+	 */
 	public boolean dominates(MOCloudChromosome solution2) {
-		if (this.getEnergyConsumption() > solution2.getEnergyConsumption() && this.getSimTime() >= solution2.getSimTime())
-			return true;
-		if (this.getSimTime() > solution2.getSimTime() && this.getEnergyConsumption() >= solution2.getEnergyConsumption())
-			return true;
-		return false;
+		boolean noWorse = this.getEnergyConsumption() <= solution2.getEnergyConsumption()
+				&& this.getSimTime() <= solution2.getSimTime();
+		boolean strictlyBetter = this.getEnergyConsumption() < solution2.getEnergyConsumption()
+				|| this.getSimTime() < solution2.getSimTime();
+		return noWorse && strictlyBetter;
 	}
 
 

@@ -5,50 +5,50 @@ import java.util.WeakHashMap;
 
 public class GAObjectives implements Comparable<GAObjectives> {
 
+	/** Tolerance used to treat near-equal objective values as ties. */
+	private static final double EPS = 1e-9;
+
 	private final Map<EGAObjectives, Double> map = new WeakHashMap<EGAObjectives, Double>();
 
-	/*
-	 * public int compareTo(GAObjectives o) {
-    boolean aBetter = false;
-    boolean bBetter = false;
-
-    for (EGAObjectives obj : EGAObjectives.values()) {
-        double va = this.getObjective(obj);
-        double vb = o.getObjective(obj);
-
-        if (va + EPS < vb) aBetter = true;      // this mejor (min)
-        else if (va > vb + EPS) bBetter = true; // other mejor
-        // si están “casi” iguales, no marcamos nada
-        if (aBetter && bBetter) return 0; // no-dominados
-    }
-
-    if (aBetter && !bBetter) return -1; // this domina a o
-    if (bBetter && !aBetter) return  1; // o domina a this
-    return 0; // iguales (o casi)
-	}
+	/**
+	 * Pareto comparison for a minimization problem (smaller objective = better).
+	 *
+	 * <p>Returns a value consistent with {@link Comparable}, where "less than"
+	 * means "better / dominating":</p>
+	 * <ul>
+	 *   <li><b>-1</b> if {@code this} Pareto-dominates {@code o} (no worse on any
+	 *       objective and strictly better on at least one),</li>
+	 *   <li><b>+1</b> if {@code o} Pareto-dominates {@code this},</li>
+	 *   <li><b>0</b> if the two are mutually non-dominated or equal within {@link #EPS}.</li>
+	 * </ul>
 	 */
-	
 	@Override
 	public int compareTo(GAObjectives o) {
-		int nDominate;
+		boolean thisBetter = false;
+		boolean otherBetter = false;
 
-		nDominate = 0;
-		// Compare the objectives of two individuals
-		Double dValue1, dValue2;
-		for (Map.Entry<EGAObjectives, Double> set1 : map.entrySet()) {
+		for (EGAObjectives obj : EGAObjectives.values()) {
+			double va = this.getObjective(obj);
+			double vb = o.getObjective(obj);
 
-			// Printing all elements of a Map
-			//System.out.println("C1: " + set1.getKey() + " = " + set1.getValue());
-			dValue1 = set1.getValue();
-			// Get objective
-			dValue2 = o.getObjective(set1.getKey());
-			//System.out.println("C2: " + set1.getKey() + " = " + dValue2);
-			if (dValue1 < dValue2)
-				nDominate = 1;
-
+			if (va + EPS < vb) {
+				thisBetter = true;       // this is smaller -> better
+			} else if (vb + EPS < va) {
+				otherBetter = true;      // other is smaller -> better
+			}
+			// Better on both sides => neither dominates: stop early.
+			if (thisBetter && otherBetter) {
+				return 0;
+			}
 		}
 
-		return nDominate;
+		if (thisBetter && !otherBetter) {
+			return -1; // this dominates o
+		}
+		if (otherBetter && !thisBetter) {
+			return 1;  // o dominates this
+		}
+		return 0;      // equal (within EPS)
 	}
 
 	public void addObjective(EGAObjectives key, double value) {
@@ -67,9 +67,6 @@ public class GAObjectives implements Comparable<GAObjectives> {
 
 	public boolean isValid() {
 		for (Map.Entry<EGAObjectives, Double> set1 : map.entrySet()) {
-
-			// Printing all elements of a Map
-			//System.out.println("C1: " + set1.getKey() + " = " + set1.getValue());
 			if (set1.getValue() < 0)
 				return false;
 		}
