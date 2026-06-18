@@ -55,7 +55,12 @@ cloudevolve/
 
 ## License
 
-Distributed under the **MIT License**. See the `LICENSE` file for details.
+Distributed under the **GNU General Public License v3.0**. See the `LICENSE`
+file for the full text.
+
+Some files under `src/algorithms/` are derived from Yuriy Lagodiuk's genetic
+algorithm library and retain their original Apache License 2.0 headers, which is
+compatible with GPLv3.
 
 ---
 
