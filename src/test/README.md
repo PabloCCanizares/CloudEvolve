@@ -54,6 +54,29 @@ open target/site/jacoco/index.html
 The report scopes coverage to the **testable core** by excluding the
 environment-coupled layer (see *Excluded from coverage* below).
 
+### Simulator integration test (opt-in)
+
+`SimulatorIntegrationSmokeTest` runs the **real** CloudSim-Storage simulator
+(`repro/cloudsimStorage.jar`) on the bundled `Al_w3` initial-population test
+case and checks the reported energy/time are sane (the reference run reports
+~24 kWh / ~2770 s). It provisions a self-contained sandbox by extracting the
+needed traces from `repro/workload.zip` and rewriting the test case's absolute
+`/localSpace/...` paths.
+
+It is skipped by default and only runs when explicitly enabled:
+
+```bash
+mvn test -Dce.runSimulatorTests=true
+```
+
+The simulator is launched with a pinned locale (`en_US`) and `-Xmx2g`, because
+the framework's output parser is locale-sensitive (it expects a dot decimal
+separator) and the full-size population (2048 VMs / 512 hosts) exceeds the
+default heap. A full multi-generation evolution can also be driven end-to-end
+against the real simulator, but is not committed as an automated test: it is
+slow, non-deterministic (the simulator samples random traces) and sensitive to
+those same locale/heap constraints plus invalid mutant configurations.
+
 ## Scope: what is tested to 100% and what is not
 
 `mvn test` runs against the whole tree, but only a well-defined **testable core**
