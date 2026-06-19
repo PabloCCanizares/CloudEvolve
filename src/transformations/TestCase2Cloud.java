@@ -172,12 +172,6 @@ public class TestCase2Cloud {
 		
 		mutableCloud = null;
 		nNumNodes = 0;
-		// host.quantity is a flat host count, mapped onto a single rack/blade so
-		// that the cloud carries exactly that many hosts. With the previous
-		// 10x10 grid, createHomogeneousCloud(10, 10, hostQuantity) reported
-		// getNumHosts() == 0 whenever racks*blades exceeded the node count, which
-		// silently zeroed host.quantity on every transformed (mutated) individual
-		// and made it unsimulatable.
 		nNumRacks = nNumBlades = 1;
 
 		tcInputCloud = (TcInput_cloud)tcInput;
@@ -185,6 +179,15 @@ public class TestCase2Cloud {
 		{
 			mutableCloud = new MutableCloud(this.eCloudSimulator);
 			nNumNodes = tcInputCloud.getHostQuantity();
+			// Lay the flat host count onto a balanced, roughly-square rack/blade
+			// grid. createHomogeneousCloud distributes the nodes across
+			// racks*blades cells but collapses to zero hosts when racks*blades
+			// exceeds the node count, so the grid side is capped at
+			// floor(sqrt(hostQuantity)) (>= 1). This preserves a real
+			// multi-rack/multi-blade topology at scale (512 -> 22x22, the
+			// canonical 100 -> 10x10) instead of flattening everything onto a
+			// single blade.
+			nNumRacks = nNumBlades = Math.max(1, (int) Math.sqrt(nNumNodes));
 			hostCpu = cloudCreator.createCPU(tcInputCloud.getHostMips(), tcInputCloud.getHostPes());
 			hostStorage = cloudCreator.createIO(tcInputCloud.getHostIoCapacity(), tcInputCloud.getIoPerformance(),tcInputCloud.getMaxIoTransferRate(), tcInputCloud.getIOLatency());			
 			hostRam = cloudCreator.createRAM(tcInputCloud.getHostRam(), tcInputCloud.getRamBandwidth());
