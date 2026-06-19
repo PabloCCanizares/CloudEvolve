@@ -5,6 +5,7 @@ import java.util.List;
 
 import configuration.EACrossoverOperator;
 import configuration.EAMutationOperator;
+import dataParser.metadata.MetaTestCase;
 
 /** {@link SimulatorPlatform} for the CloudSim-Storage backend. */
 public final class CloudSimStoragePlatform implements SimulatorPlatform {
@@ -31,5 +32,14 @@ public final class CloudSimStoragePlatform implements SimulatorPlatform {
         operators.add(new EACrossoverOperator(2, 100.0,
                 "Given two parents, a random rack is selected from the first one and is exchanged "
               + "from a random rack from the second one to generate a new individual.", true));
+    }
+
+    @Override
+    public boolean execute(SimulatorExecution exec, MetaTestCase metaTC) {
+        // Pin the locale: the simulator prints decimals using the default locale
+        // and its own output parser expects a dot separator, so on comma-decimal
+        // hosts (e.g. es_ES) the energy/time would otherwise be read back as -1.
+        return exec.executeCommand(exec.timeoutHeader() + " 60 java -Duser.language=en -Duser.country=US -jar "
+                + exec.simulatorPath() + " --standalone " + metaTC.getFilePath());
     }
 }

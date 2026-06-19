@@ -5,6 +5,7 @@ import java.util.List;
 
 import configuration.EACrossoverOperator;
 import configuration.EAMutationOperator;
+import dataParser.metadata.MetaTestCase;
 
 /** {@link SimulatorPlatform} for the SimGrid backend. */
 public final class SimGridPlatform implements SimulatorPlatform {
@@ -29,5 +30,12 @@ public final class SimGridPlatform implements SimulatorPlatform {
     @Override
     public void registerCrossoverOperators(List<EACrossoverOperator> operators) {
         // SimGrid registers no crossover operators (legacy behaviour).
+    }
+
+    @Override
+    public boolean execute(SimulatorExecution exec, MetaTestCase metaTC) {
+        exec.executeCommandSimGrid("rm -r /tmp/simgrid*");
+        return exec.executeCommandSimGrid("timeout 60 java -jar /localSpace/cloudEnergy/simGrid/simGrid.jar --standalone "
+                + metaTC.getFilePath() + " &>" + metaTC.getTcOutput());
     }
 }

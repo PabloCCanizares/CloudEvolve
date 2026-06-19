@@ -17,8 +17,10 @@ import dataParser.cloud.input.TcInput_cloud;
 import dataParser.cloud.output.TcOutput_cloud;
 import dataParser.metadata.MetaTestCase;
 import main.ConfigMT;
+import platform.SimulatorExecution;
+import platform.SimulatorPlatforms;
 
-public class MT_Handler {
+public class MT_Handler implements SimulatorExecution {
 
 	double dEnergy;
 	double dTime;
@@ -91,17 +93,7 @@ public class MT_Handler {
 						ConfigMT.getSingletonInstance().tcInput.setHostQuantity(nHosts);
 					}
 
-					switch (platformInfo) {
-					case eSIMGRID:
-						bRet = executeSimGrid(metaTC, strCloudXml, strPathOutput, nHosts);
-						break;
-					case eCLOUDSIMSTORAGE:
-						bRet = executeCloudSim(metaTC, strCloudXml, strPathOutput, nHosts);
-						break;
-					default:
-						bRet = false;
-						break;
-					}
+					bRet = SimulatorPlatforms.of(platformInfo).execute(this, metaTC);
 
 					if (bRet) {
 						// Parse the tc output
@@ -129,26 +121,19 @@ public class MT_Handler {
 		return dEnergy;
 	}
 
-	private boolean executeCloudSim(MetaTestCase metaTC, String strCloudXml, String strPathOutput, int nHosts) {
+	// ── SimulatorExecution: the seam the platform strategies launch through ──
 
-		String simulatorPath, timeoutHeader;
-		
-		simulatorPath = ConfigMT.getSingletonInstance().getSimulatorPath();
-		timeoutHeader = getTimeoutHeader();
-		// Pin the locale: the simulator prints decimals using the default locale
-		// and its own output parser expects a dot separator, so on comma-decimal
-		// hosts (e.g. es_ES) the energy/time would otherwise be read back as -1.
-		return executeCommand(timeoutHeader+" 60 java -Duser.language=en -Duser.country=US -jar "+simulatorPath+" --standalone "
-				+ metaTC.getFilePath() /* +" &>"+metaTC.getTcOutput() */);
+	@Override
+	public String timeoutHeader() {
+		return getTimeoutHeader();
 	}
 
-	private boolean executeSimGrid(MetaTestCase metaTC, String strCloudXml, String strPathOutput, int nHosts) {
-
-		executeCommandSimGrid("rm -r /tmp/simgrid*");
-		return executeCommandSimGrid("timeout 60 java -jar /localSpace/cloudEnergy/simGrid/simGrid.jar --standalone "
-				+ metaTC.getFilePath() + " &>" + metaTC.getTcOutput());
+	@Override
+	public String simulatorPath() {
+		return ConfigMT.getSingletonInstance().getSimulatorPath();
 	}
 
+	@Override
 	public boolean executeCommandSimGrid(String strCommand) {
 		ProcessBuilder processBuilder = new ProcessBuilder();
 		boolean bRet;
@@ -198,7 +183,8 @@ public class MT_Handler {
 		return bRet;
 	}
 
-	private boolean executeCommand(String strCommand) {
+	@Override
+	public boolean executeCommand(String strCommand) {
 		Process p;
 		boolean bRet;
 		try {

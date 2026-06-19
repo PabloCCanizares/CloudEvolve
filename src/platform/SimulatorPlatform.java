@@ -5,6 +5,7 @@ import java.util.List;
 
 import configuration.EACrossoverOperator;
 import configuration.EAMutationOperator;
+import dataParser.metadata.MetaTestCase;
 
 /**
  * Strategy that captures the behaviour which varies per cloud-simulator backend.
@@ -34,4 +35,10 @@ public interface SimulatorPlatform {
      * to {@code operators}.
      */
     void registerCrossoverOperators(List<EACrossoverOperator> operators);
+
+    /**
+     * Launches the external simulator for one test case through {@code exec},
+     * returning whether the run succeeded.
+     */
+    boolean execute(SimulatorExecution exec, MetaTestCase metaTC);
 }
