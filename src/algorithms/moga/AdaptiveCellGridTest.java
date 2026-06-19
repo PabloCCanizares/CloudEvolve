@@ -14,11 +14,14 @@ import algorithms.Chromosome;
  * Unit tests for the public API of {@link AdaptiveCellGrid}, the adaptive grid
  * archive used by the PAES algorithms.
  *
- * <p>Objective values are kept as small integers well within the grid
- * resolution (8 divisions -> 64 cells) so the archive's cell indexing stays in
- * range. Note that the archive over-/underflow guards in the constructor and a
- * couple of defensive branches are unreachable with valid inputs, so this class
- * is intentionally not pursued to 100% line coverage.</p>
+ * <p>Most tests use small integer objective values for readability, but the
+ * grid normalizes objective values onto its bisection grid against the adaptive
+ * min/max bounds, so cell indexing stays in range whatever the objective scale.
+ * {@link #testWidelySpreadObjectivesDoNotOverflowSmallGrid()} and
+ * {@link #testWideSpreadProbesStayInRange()} cover that explicitly on a coarse
+ * grid. Note that the archive over-/underflow guard in the constructor is
+ * unreachable with valid inputs, so this class is intentionally not pursued to
+ * 100% line coverage.</p>
  */
 public class AdaptiveCellGridTest {
 
@@ -71,6 +74,56 @@ public class AdaptiveCellGridTest {
         grid.add(new DummyChromosome(3, 2));
         PopulationMO<DummyChromosome> pop = grid.getPopulation();
         assertEquals(2, pop.getSize());
+    }
+
+    /**
+     * Regression test for the latent IndexOutOfBoundsException: a coarse grid
+     * (2 bisections -> 4 divisions -> 16 cells) fed objective values spanning
+     * ~50-100 (far wider than the grid resolution) used to index past the end
+     * of its backing list in {@code add()}. The grid must now absorb the spread
+     * by normalizing onto its bisection grid.
+     */
+    @Test
+    public void testWidelySpreadObjectivesDoNotOverflowSmallGrid() throws Exception {
+        AdaptiveCellGrid<DummyChromosome> coarse =
+                new AdaptiveCellGrid<DummyChromosome>(100, 4, 2);
+
+        // A Pareto-style trade-off front: decreasing energy, increasing time, so
+        // every point is mutually non-dominated and gets archived.
+        for (int i = 0; i < 10; i++) {
+            double energy = 100.0 - i * 5.0;
+            double time = 10.0 + i * 5.0;
+            assertTrue(coarse.add(new DummyChromosome(energy, time)));
+        }
+
+        assertEquals(10, coarse.getSize());
+        assertEquals(10, coarse.getPopulation().getSize());
+    }
+
+    /**
+     * The other public probes — {@code get()}, {@code getDensity()} and
+     * {@code remove()} — also derive a cell index from the objective values, so
+     * they must stay in range on a coarse grid with widely spread objectives.
+     */
+    @Test
+    public void testWideSpreadProbesStayInRange() throws Exception {
+        AdaptiveCellGrid<DummyChromosome> coarse =
+                new AdaptiveCellGrid<DummyChromosome>(100, 4, 2);
+
+        DummyChromosome low = new DummyChromosome(5, 95);
+        DummyChromosome high = new DummyChromosome(95, 5);
+        coarse.add(low);
+        coarse.add(high);
+
+        assertTrue(coarse.get(low).contains(low));
+        assertEquals(1, coarse.getDensity(low));
+        assertEquals(1, coarse.getDensity(high));
+
+        coarse.remove(low);
+        assertFalse(coarse.get(low).contains(low));
+        assertEquals(0, coarse.getDensity(low));
+        // The other solution is untouched and still reachable in range.
+        assertEquals(1, coarse.getDensity(high));
     }
 
     // ── Test double ──────────────────────────────────────────────────────────

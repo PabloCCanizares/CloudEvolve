@@ -1,6 +1,5 @@
 package algorithms.moga;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -202,49 +201,74 @@ public class AdaptiveCellGrid<C extends Chromosome<C>> {
 	}
 
 	private void transferData() {
+		// The bounds just widened, so the cell every archived solution maps to
+		// has changed. Re-bin all of them under the new bounds; calculateLinearIndex
+		// now derives the cell from the live min/max, so a fresh pass over the
+		// stored solutions is enough to keep the grid consistent.
 		List<List<C>> newData = new ArrayList<>(numberOfDivisions * numberOfDivisions);
 		for (int i = 0; i < numberOfDivisions * numberOfDivisions; i++) {
 			newData.add(new ArrayList<C>());
 		}
 		Map<Integer, Integer> newCellCounts = new HashMap<>();
 
-		double[] indices = new double[minimum.length];
-		double[] newIndices = new double[minimum.length];
-		for (int i = 0; i < cellCounts.size(); i++) {
-			calculateIndices(i, indices, minimum);
-			calculateIndices(i, newIndices, minimum);
-
-			int linearIndex = calculateLinearIndex(newIndices);
-			if (linearIndex > newData.size())
-				System.out.println("problemas");
-			newData.add(linearIndex, data.get(i));
-			newCellCounts.put(linearIndex, cellCounts.getOrDefault(i, 0));
+		for (List<C> cell : data) {
+			for (C solution : cell) {
+				int linearIndex = calculateLinearIndex(getIndicesFromSolution(solution));
+				List<C> target = newData.get(linearIndex);
+				target.add(solution);
+				newCellCounts.put(linearIndex, target.size());
+			}
 		}
 
 		data = newData;
 		cellCounts = newCellCounts;
 	}
 
-	private void calculateIndices(int linearIndex, double[] indices, double[] bounds) {
-		double stride = 1;
-		for (int i = indices.length - 1; i >= 0; i--) {
-			indices[i] = (linearIndex / stride) % numberOfDivisions + bounds[i];
-			stride *= numberOfDivisions;
-		}
-	}
-
 	private int calculateLinearIndex(double... indices) {
 		int linearIndex = 0;
 		int product = 1;
 
+		// Map each objective value onto a grid cell in [0, numberOfDivisions) by
+		// normalizing against the adaptive min/max bounds. Indexing by the raw
+		// value delta (as before) makes the linear index grow with the objective
+		// scale and run off the end of the backing list whenever the range
+		// exceeds the grid resolution.
 		for (int i = numberOfObjectives - 1; i >= 0; i--) {
-			int size = (int) (maximum[i] - minimum[i] + 1);
-			int normalized = (int) (indices[i] - minimum[i]);
-			linearIndex += normalized * product;
-			product *= size;
+			linearIndex += cellCoordinate(indices[i], i) * product;
+			product *= numberOfDivisions;
+		}
 
+		// Defensive bound check: never index outside the backing list, even if
+		// the grid is configured with more than two objectives (the data list is
+		// sized numberOfDivisions^2).
+		if (linearIndex < 0) {
+			return 0;
+		}
+		if (linearIndex >= data.size()) {
+			return data.size() - 1;
 		}
 		return linearIndex;
+	}
+
+	/**
+	 * Maps a raw objective value onto a grid cell coordinate in the range
+	 * {@code [0, numberOfDivisions - 1]} by normalizing it against the current
+	 * adaptive bounds for that objective. Degenerate ranges (a single point, or
+	 * the initial infinite bounds) collapse to cell 0.
+	 */
+	private int cellCoordinate(double value, int objective) {
+		double range = maximum[objective] - minimum[objective];
+		if (!(range > 0) || Double.isInfinite(range)) {
+			return 0;
+		}
+		int cell = (int) (((value - minimum[objective]) / range) * numberOfDivisions);
+		if (cell < 0) {
+			return 0;
+		}
+		if (cell >= numberOfDivisions) {
+			return numberOfDivisions - 1;
+		}
+		return cell;
 	}
 
 	private double[] getIndicesFromSolution(C solution) {
@@ -266,19 +290,11 @@ public class AdaptiveCellGrid<C extends Chromosome<C>> {
 	}
 
 	public boolean isInLessCrowdedRegion(C chrom, C mutated) {
-		// Aquí debes implementar la lógica para determinar si el cromosoma `mutated`
-		// está en una región menos poblada que el cromosoma `chrom`
-		// y devolver `true` o `false` según corresponda
-		// ...
-		double aux1 = 0;
-		double aux2 = 0;
-		if (cellCounts.containsKey(chrom)) {
-			aux1 = cellCounts.get(calculateLinearIndex(getIndicesFromSolution(chrom)));
-		}
-		if (cellCounts.containsKey(mutated)) {
-			aux2 = cellCounts.get(calculateLinearIndex(getIndicesFromSolution(mutated)));
-		}
-		return aux1 < aux2;
+		// True when `mutated` lands in a less crowded grid cell than `chrom`.
+		// The previous implementation probed cellCounts with the chromosomes
+		// themselves, but that map is keyed by Integer cell indices, so both
+		// look-ups always missed and the method was effectively dead code.
+		return getDensity(mutated) < getDensity(chrom);
 	}
 
 	public PopulationMO<C> getPopulation() {

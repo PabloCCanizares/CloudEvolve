@@ -107,11 +107,11 @@ public class MOAlgorithmSmokeTest {
     }
 
     // PAES variants archive solutions in an AdaptiveCellGrid sized divisions^2,
-    // where divisions = 2^bisections. The grid indexes cells by the raw objective
-    // values, so the resolution must comfortably exceed the objective range
-    // (~50 here) or AdaptiveCellGrid.add() runs off the end of its backing list.
-    // bisections=6 -> 64 divisions -> 4096 cells, large enough for this fixture.
-    private static final int PAES_BISECTIONS = 6;
+    // where divisions = 2^bisections. The grid now normalizes objective values
+    // onto its bisection grid using the adaptive min/max bounds, so a coarse
+    // resolution is safe regardless of the objective scale (~50 here).
+    // bisections=2 -> 4 divisions -> 16 cells, the canonical small PAES grid.
+    private static final int PAES_BISECTIONS = 2;
 
     @Test
     public void smokePAES() {
