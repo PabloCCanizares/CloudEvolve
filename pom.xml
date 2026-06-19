@@ -30,6 +30,17 @@
       <version>4.13.2</version>
     </dependency>
     <!--
+      Required at runtime by MT.jar's graph generation (FileCreator uses
+      org.apache.commons.io.filefilter.WildcardFileFilter); without it a full
+      evolution run aborts at the post-evolution graph step with
+      NoClassDefFoundError.
+    -->
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.16.1</version>
+    </dependency>
+    <!--
       MT.jar bundles the metamorphic-testing layer (dataParser.*, mutation.*,
       entities.cloud.*, main.ConfigMT, ...) that the production sources compile
       and run against. It is the only external library needed to build and run

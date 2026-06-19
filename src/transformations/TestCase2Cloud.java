@@ -172,8 +172,14 @@ public class TestCase2Cloud {
 		
 		mutableCloud = null;
 		nNumNodes = 0;
-		nNumRacks = nNumBlades = 10;
-		
+		// host.quantity is a flat host count, mapped onto a single rack/blade so
+		// that the cloud carries exactly that many hosts. With the previous
+		// 10x10 grid, createHomogeneousCloud(10, 10, hostQuantity) reported
+		// getNumHosts() == 0 whenever racks*blades exceeded the node count, which
+		// silently zeroed host.quantity on every transformed (mutated) individual
+		// and made it unsimulatable.
+		nNumRacks = nNumBlades = 1;
+
 		tcInputCloud = (TcInput_cloud)tcInput;
 		if(tcInputCloud != null)
 		{

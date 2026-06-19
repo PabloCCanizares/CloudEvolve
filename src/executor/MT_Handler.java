@@ -135,7 +135,10 @@ public class MT_Handler {
 		
 		simulatorPath = ConfigMT.getSingletonInstance().getSimulatorPath();
 		timeoutHeader = getTimeoutHeader();
-		return executeCommand(timeoutHeader+" 60 java -jar "+simulatorPath+" --standalone "
+		// Pin the locale: the simulator prints decimals using the default locale
+		// and its own output parser expects a dot separator, so on comma-decimal
+		// hosts (e.g. es_ES) the energy/time would otherwise be read back as -1.
+		return executeCommand(timeoutHeader+" 60 java -Duser.language=en -Duser.country=US -jar "+simulatorPath+" --standalone "
 				+ metaTC.getFilePath() /* +" &>"+metaTC.getTcOutput() */);
 	}
 
