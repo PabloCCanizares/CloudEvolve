@@ -37,6 +37,7 @@ import dataParser.TestCase;
 import dataParser.TestCaseInput;
 import dataParser.TestCaseParser;
 import dataParser.cloud.ECloudSimulator;
+import platform.SimulatorPlatforms;
 import dataParser.cloud.TestCaseParser_cloud;
 import dataParser.cloud.input.TcInput_cloud;
 import dataParser.metadata.MetaParser;
@@ -106,16 +107,7 @@ public class Cloud_GA extends Thread {
 					+ "metaInfo";
 		}
 		if (strPathBase == null) {
-			switch (eSimulator) {
-			case eCLOUDSIMSTORAGE:
-				strPathBase = "/localSpace/cloudEnergy/cloudsimStorage/evolutionary";
-				break;
-			case eSIMGRID:
-				strPathBase = "/localSpace/cloudEnergy/simGrid/evolutionary";
-				break;
-			default:
-				strPathBase = "/localSpace/cloudEnergy/cloudsimStorage/evolutionary";
-			}
+			strPathBase = SimulatorPlatforms.of(eSimulator).evolutionaryBasePath();
 		}
 
 		/**
@@ -180,16 +172,7 @@ public class Cloud_GA extends Thread {
 					+ "metaInfo";
 		}
 		if (strPathBase == null) {
-			switch (eSimulator) {
-			case eCLOUDSIMSTORAGE:
-				strPathBase = "/localSpace/cloudEnergy/cloudsimStorage/evolutionary";
-				break;
-			case eSIMGRID:
-				strPathBase = "/localSpace/cloudEnergy/simGrid/evolutionary";
-				break;
-			default:
-				strPathBase = "/localSpace/cloudEnergy/cloudsimStorage/evolutionary";
-			}
+			strPathBase = SimulatorPlatforms.of(eSimulator).evolutionaryBasePath();
 		}
 
 		for (int nProbLevel = nProbBase; nProbLevel < 3; nProbLevel++) {

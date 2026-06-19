@@ -2,6 +2,8 @@ package core;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import algorithms.moga.GAObjectives;
@@ -25,6 +27,28 @@ public class SimulatorPathCharacterizationTest {
 
     private static final String CLOUDSIM_PATH = "/localSpace/cloudEnergy/cloudsimStorage/evolutionary";
     private static final String SIMGRID_PATH  = "/localSpace/cloudEnergy/simGrid/evolutionary";
+
+    // The base path is now resolved from a configurable root. Pin it to the
+    // legacy default so these assertions stay deterministic regardless of any
+    // CLOUDEVOLVE_HOME set on the machine running the tests.
+    private static final String HOME_PROPERTY = "cloudevolve.home";
+    private static final String LEGACY_HOME = "/localSpace/cloudEnergy";
+    private String savedHome;
+
+    @Before
+    public void pinHome() {
+        savedHome = System.getProperty(HOME_PROPERTY);
+        System.setProperty(HOME_PROPERTY, LEGACY_HOME);
+    }
+
+    @After
+    public void restoreHome() {
+        if (savedHome == null) {
+            System.clearProperty(HOME_PROPERTY);
+        } else {
+            System.setProperty(HOME_PROPERTY, savedHome);
+        }
+    }
 
     /** Minimal concrete orchestrator: we only exercise {@code doConfigure}. */
     private static final class ProbeOrchestrator extends MOCloudOrchestrator {

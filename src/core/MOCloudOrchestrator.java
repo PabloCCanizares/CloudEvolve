@@ -21,6 +21,7 @@ import entities.MOCloudChromosome;
 import executor.MT_Handler;
 import main.ConfigMT;
 import mutation.MutableCloud.MutableCloud;
+import platform.SimulatorPlatforms;
 import transformations.TestCase2Cloud;
 
 public abstract class MOCloudOrchestrator {
@@ -83,16 +84,7 @@ public abstract class MOCloudOrchestrator {
 		}
 
 		if (strPathBase == null) {
-			switch (eSimulator) {
-			case eCLOUDSIMSTORAGE:
-				strPathBase = "/localSpace/cloudEnergy/cloudsimStorage/evolutionary";
-				break;
-			case eSIMGRID:
-				strPathBase = "/localSpace/cloudEnergy/simGrid/evolutionary";
-				break;
-			default:
-				strPathBase = "/localSpace/cloudEnergy/cloudsimStorage/evolutionary";
-			}
+			strPathBase = SimulatorPlatforms.of(eSimulator).evolutionaryBasePath();
 		} else
 			System.out.printf("Base yet selected: %s", strPathBase);
 
