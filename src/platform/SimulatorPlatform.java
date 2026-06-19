@@ -1,5 +1,11 @@
 package platform;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import configuration.EACrossoverOperator;
+import configuration.EAMutationOperator;
+
 /**
  * Strategy that captures the behaviour which varies per cloud-simulator backend.
  *
@@ -16,4 +22,16 @@ public interface SimulatorPlatform {
 
     /** Default root path under which this simulator's evolutionary runs are stored. */
     String evolutionaryBasePath();
+
+    /**
+     * Appends this simulator's mutation operators to {@code operators}, consuming
+     * one probability per operator (in declaration order) from {@code probabilities}.
+     */
+    void registerMutationOperators(List<EAMutationOperator> operators, LinkedList<Double> probabilities);
+
+    /**
+     * Appends this simulator's crossover operators (with their fixed probabilities)
+     * to {@code operators}.
+     */
+    void registerCrossoverOperators(List<EACrossoverOperator> operators);
 }

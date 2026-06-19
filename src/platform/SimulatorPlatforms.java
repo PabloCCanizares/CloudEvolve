@@ -18,14 +18,20 @@ public final class SimulatorPlatforms {
     /**
      * Resolves the strategy for a simulator.
      *
-     * <p>Mirrors the legacy {@code switch (eSimulator)} default exactly: SimGrid
-     * maps to its own platform, and <em>everything else</em> (including a null
-     * simulator) falls back to CloudSim-Storage.</p>
+     * <p>Only the simulators with a real backend are supported; any other value
+     * (or {@code null}) is rejected with an {@link IllegalArgumentException}
+     * rather than silently falling back, so an unsupported simulator fails fast
+     * instead of running with the wrong configuration.</p>
+     *
+     * @throws IllegalArgumentException if {@code simulator} has no platform strategy
      */
     public static SimulatorPlatform of(ECloudSimulator simulator) {
+        if (simulator == ECloudSimulator.eCLOUDSIMSTORAGE) {
+            return CLOUDSIM_STORAGE;
+        }
         if (simulator == ECloudSimulator.eSIMGRID) {
             return SIMGRID;
         }
-        return CLOUDSIM_STORAGE;
+        throw new IllegalArgumentException("Unsupported simulator (no platform strategy): " + simulator);
     }
 }

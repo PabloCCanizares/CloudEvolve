@@ -21,6 +21,7 @@ import metamorphicRelation.expression.cloud.CloudComponents;
 import metamorphicRelation.expression.cloud.Energy;
 import metamorphicRelation.expression.cloud.Nmachines;
 import metamorphicRelation.expression.cloud.Performance;
+import platform.SimulatorPlatforms;
 
 public class EAController {
 
@@ -76,68 +77,27 @@ public class EAController {
 	}
 	public void initializeMutationOperators(LinkedList<Double> probList)
 	{
-		switch(this.ePlatformType)
-		{
-		case eCLOUDSIMSTORAGE:
-			if(probList.size() >= 4)
-			{
-				
-				mutationOperatorList.add(new EAMutationOperator(1, probList.removeFirst(), "Seed changes on a percentage of nodes of the system", true));
-				mutationOperatorList.add(new EAMutationOperator(2, probList.removeFirst(), "Randomly modifies the bandwidth of a network link of the cloud", true));
-				mutationOperatorList.add(new EAMutationOperator(3, probList.removeFirst(), "Randomly modifies the latency of a network link of the cloud", true));
-				mutationOperatorList.add(new EAMutationOperator(7, probList.removeFirst(), "Delete a rack and all the links connected to it", true));
-			}
-
-			break;
-		case eSIMGRID:
-			mutationOperatorList.add(new EAMutationOperator(1, probList.removeFirst(), "Seed changes on a percentage of nodes of the system", true));
-			mutationOperatorList.add(new EAMutationOperator(2, probList.removeFirst(), "Randomly modifies the bandwidth of a network link of the cloud", false));
-			mutationOperatorList.add(new EAMutationOperator(3, probList.removeFirst(), "Randomly modifies the latency of a network link of the cloud", false));
-			mutationOperatorList.add(new EAMutationOperator(4, probList.removeFirst(), "", false));
-			mutationOperatorList.add(new EAMutationOperator(5, probList.removeFirst(), "", false));
-			mutationOperatorList.add(new EAMutationOperator(6, probList.removeFirst(), "", false));
-			mutationOperatorList.add(new EAMutationOperator(7, probList.removeFirst(), "Delete a rack and all the links connected to it", true));			
-			mutationOperatorList.add(new EAMutationOperator(8, probList.removeFirst(), "", false));
-			break;
-		default:
-			break;
-		}
+		SimulatorPlatforms.of(this.ePlatformType).registerMutationOperators(mutationOperatorList, probList);
 		if(probModule == null)
 		{
 			//Initialises the probability module
 			probModule = new EAProbabilityModule();
 		}
-		
+
 		probModule.addMutationOperatorList(mutationOperatorList);
 
 	}
 
 	public void initializeCrossoverOperators()
 	{
-		switch(this.ePlatformType)
-		{
-		case eCLOUDSIMSTORAGE:
-			//Operator 1
-			crossoverOperatorList.add(new EACrossoverOperator(1, 0.0, 
-					"Seed changes on a percentage of nodes of the system", true));
-			//Operator 2
-			crossoverOperatorList.add(new EACrossoverOperator(2, 100.0, 
-					"Given two parents, a random rack is selected from the first one and is exchanged "
-				  + "from a random rack from the second one to generate a new individual.", true));			
-			break;
-		case eSIMGRID:
-				
-			break;
-		default:
-			break;
-		}
+		SimulatorPlatforms.of(this.ePlatformType).registerCrossoverOperators(crossoverOperatorList);
 		if(probModule == null)
 		{
 			//Initialises the probability module
-			probModule = new EAProbabilityModule();			
+			probModule = new EAProbabilityModule();
 		}
 		probModule.addCrossoverOperatorList(crossoverOperatorList);
-		
+
 	}
 	public String getPathBase() {		
 		return strPathBase;
