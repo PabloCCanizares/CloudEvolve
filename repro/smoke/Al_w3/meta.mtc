@@ -1,0 +1,9 @@
+Id: 0
+GroupId: 0
+MutantId: 0
+InputSrc: Al_w3/input.tc
+OutputSrc: Al_w3/output.tc
+ExecCommands: 
+isSourceTC: true
+followUpChilds: 
+Description: Source test case
