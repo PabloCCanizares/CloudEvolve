@@ -69,6 +69,28 @@ it at a directory holding `cloudsimStorage/cloudsimStorage.jar` and a
 `cloudsimStorage/evolutionary/InitialPopulation/<case>` tree, then run e.g.
 `main_scico.Launcher_VEGA`.
 
+### Run with the surrogate model (fast, no simulator)
+
+A third backend, `eSURROGATE`, replaces the CloudSim-Storage simulator with a
+trained **LightGBM** surrogate that predicts `(energy, time)` directly from the
+cloud configuration. Everything else — algorithms, metamorphic testing, cloud
+topology, the test-case I/O format — is identical, so it is a drop-in evaluator
+that turns minutes-per-candidate simulations into microseconds.
+
+The models live in [`lib/surrogate/`](lib/surrogate) (two `*_lgbm.txt` files in
+LightGBM's native text format) and are read by a small, dependency-free
+evaluator ([`platform.surrogate.LightGbmModel`](src/platform/surrogate/LightGbmModel.java));
+a [golden-master test](src/platform/surrogate/SurrogateModelGoldenTest.java) pins
+the Java predictions to the original Python models bit-for-bit. Select it by
+passing `eSURROGATE` as the backend and the model directory in place of the
+simulator jar. The ready-to-run wrapper is
+[`repro/launcherSurrogate.sh`](repro/launcherSurrogate.sh):
+
+```bash
+cd repro
+./launcherSurrogate.sh -a eNSGAII -n Al_w3 -i 100
+```
+
 ---
 
 ## Configuration
@@ -116,11 +138,13 @@ cloudevolve/
 │   ├── entities/          # Cloud-chromosome domain model
 │   ├── executor/          # Simulator adapters & evaluation runners
 │   ├── platform/          # Per-simulator strategy (paths, operators, execution, transforms)
+│   │   └── surrogate/     # Pure-Java LightGBM evaluator for the eSURROGATE backend
 │   ├── transformations/   # Test-case <-> cloud-model transformations
 │   ├── main/              # CLI entry points
 │   ├── main_scico/        # Experiment launchers (Launcher_VEGA, …)
 │   └── auxiliars/         # Common utilities & helpers
 ├── lib/MT.jar             # Bundled metamorphic-testing layer
+├── lib/surrogate/         # Trained LightGBM surrogate models (eSURROGATE backend)
 ├── repro/                 # Bundled simulator jar + ready-to-run smoke fixtures
 └── docs/                  # Guides and reference material
 ```

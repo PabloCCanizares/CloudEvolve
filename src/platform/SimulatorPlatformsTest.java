@@ -14,9 +14,9 @@ import dataParser.cloud.ECloudSimulator;
 /**
  * Tests for the per-simulator path strategy and its factory.
  *
- * <p>The factory only supports the simulators with a real backend
- * (CloudSim-Storage and SimGrid); any other value fails fast with an
- * {@link IllegalArgumentException} instead of silently falling back.
+ * <p>The factory only supports the simulators with a backend strategy
+ * (CloudSim-Storage, SimGrid and the surrogate ML model); any other value fails
+ * fast with an {@link IllegalArgumentException} instead of silently falling back.
  * {@link #supportedSimulatorsKeepTheLegacyBasePath()} pins the two supported
  * paths and {@link #unsupportedSimulatorThrows()} pins the fail-fast contract.</p>
  *
@@ -55,6 +55,14 @@ public class SimulatorPlatformsTest {
     public void factorySelectsExpectedConcreteStrategies() {
         assertTrue(SimulatorPlatforms.of(ECloudSimulator.eCLOUDSIMSTORAGE) instanceof CloudSimStoragePlatform);
         assertTrue(SimulatorPlatforms.of(ECloudSimulator.eSIMGRID) instanceof SimGridPlatform);
+        assertTrue(SimulatorPlatforms.of(ECloudSimulator.eSURROGATE) instanceof SurrogatePlatform);
+    }
+
+    /** The surrogate backend keeps its own evolutionary subtree. */
+    @Test
+    public void surrogateHasItsOwnBasePath() {
+        assertEquals("/localSpace/cloudEnergy/surrogate/evolutionary",
+                SimulatorPlatforms.of(ECloudSimulator.eSURROGATE).evolutionaryBasePath());
     }
 
     /** A configured root is honoured, with each simulator keeping its subtree. */
@@ -72,7 +80,8 @@ public class SimulatorPlatformsTest {
     @Test
     public void unsupportedSimulatorThrows() {
         for (ECloudSimulator s : ECloudSimulator.values()) {
-            if (s == ECloudSimulator.eCLOUDSIMSTORAGE || s == ECloudSimulator.eSIMGRID) {
+            if (s == ECloudSimulator.eCLOUDSIMSTORAGE || s == ECloudSimulator.eSIMGRID
+                    || s == ECloudSimulator.eSURROGATE) {
                 continue;
             }
             assertThrows("expected fail-fast for " + s,

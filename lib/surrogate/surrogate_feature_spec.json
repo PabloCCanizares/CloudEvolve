@@ -1,0 +1,47 @@
+{
+  "features": [
+    "vm.quantity",
+    "vm.mips",
+    "vm.pes",
+    "vm.ram",
+    "vm.bw",
+    "vm.size",
+    "vm.priority",
+    "vm.schedulingInterval",
+    "host.quantity",
+    "host.ram",
+    "host.ramspeed",
+    "host.bw",
+    "host.sto",
+    "host.mips",
+    "host.pes",
+    "sto.capacity",
+    "sto.maxTransferRate",
+    "sto.latency",
+    "work.volume",
+    "work.numTraces",
+    "net.bandwidth",
+    "net.latency",
+    "net.switches",
+    "sto.type",
+    "work.name"
+  ],
+  "targets": [
+    "energy_kwh",
+    "sim_time_sec"
+  ],
+  "categorical_feature": [
+    "sto.type",
+    "work.name"
+  ],
+  "categories": {
+    "sto.type": [
+      "__UNK__",
+      "hdd"
+    ],
+    "work.name": [
+      "__UNK__",
+      "mix_vm"
+    ]
+  }
+}

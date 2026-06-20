@@ -11,6 +11,7 @@ public final class SimulatorPlatforms {
 
     private static final SimulatorPlatform CLOUDSIM_STORAGE = new CloudSimStoragePlatform();
     private static final SimulatorPlatform SIMGRID = new SimGridPlatform();
+    private static final SimulatorPlatform SURROGATE = new SurrogatePlatform();
 
     private SimulatorPlatforms() {
     }
@@ -31,6 +32,9 @@ public final class SimulatorPlatforms {
         }
         if (simulator == ECloudSimulator.eSIMGRID) {
             return SIMGRID;
+        }
+        if (simulator == ECloudSimulator.eSURROGATE) {
+            return SURROGATE;
         }
         throw new IllegalArgumentException("Unsupported simulator (no platform strategy): " + simulator);
     }

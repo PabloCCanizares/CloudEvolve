@@ -103,6 +103,25 @@ configuration, writing the Pareto front and per-iteration logs under `out/`:
 
 Use a small `-i` (e.g. `-i 5`) for a quick check of the pipeline.
 
+### Surrogate backend (fast variant)
+
+`launcherSurrogate.sh` runs the exact same pipeline but evaluates fitness with a
+trained **LightGBM surrogate** instead of launching the simulator, so a full
+evolution finishes in seconds. It is a drop-in replacement (same algorithms,
+metamorphic testing and cloud model); only the `(energy, time)` evaluation is
+predicted rather than simulated.
+
+```bash
+./launcherSurrogate.sh -a eNSGAII -n Al_w3 -i 100
+# output: out_surrogate/NSGAII/<timestamp>_Al_w3/
+```
+
+The models are read from `../lib/surrogate` by default (this folder lives inside
+the repo). If you run `repro/` standalone, copy `surrogate_energy_lgbm.txt` and
+`surrogate_time_lgbm.txt` somewhere and pass the directory with `-s`. Being a
+surrogate, the figures approximate the simulator; use the real backend for the
+paper's exact numbers.
+
 ## Tier 2 — Reduced study (hours)
 
 The full design at reduced scale — enough to see the trend without the full cost:

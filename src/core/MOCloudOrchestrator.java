@@ -50,9 +50,13 @@ public abstract class MOCloudOrchestrator {
 			strSim = args[0];
 			strInitialPopulationPath = args[1] + File.separator + "metaInfo";
 
-			if (strSim.indexOf("cloudsimstorage") != -1)
-				eSimulator = ECloudSimulator.eCLOUDSIMSTORAGE;
-			else if (strSim.indexOf("simgrid") != -1)
+			// Match the simulator token case-insensitively so launcher values like
+			// "eCloudSimStorage", "eSimGrid" or "eSURROGATE" are all recognised
+			// (the previous case-sensitive check only worked via the default).
+			String strSimLower = strSim.toLowerCase();
+			if (strSimLower.contains("surrogate"))
+				eSimulator = ECloudSimulator.eSURROGATE;
+			else if (strSimLower.contains("simgrid"))
 				eSimulator = ECloudSimulator.eSIMGRID;
 			else
 				eSimulator = ECloudSimulator.eCLOUDSIMSTORAGE;
