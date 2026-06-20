@@ -1,5 +1,7 @@
 package main_scico;
 
+import platform.PlatformPaths;
+
 import main.java.Cloud_MO;
 
 public class Launcher_PAES {
@@ -23,7 +25,7 @@ public class Launcher_PAES {
 		String[] aux = new String[9];
 		String strInitialPath;
 		
-		strInitialPath = "/localSpace/cloudEnergy/cloudsimStorage/evolutionary/InitialPopulation/";
+		strInitialPath = PlatformPaths.evolutionaryBase("cloudsimStorage") + "/InitialPopulation/";
 		//Algorithm
 		aux[0] = "ePAES2";
 		
@@ -43,13 +45,13 @@ public class Launcher_PAES {
 		aux[5] = "1";
 		
 		//Path base (to save the experiments)
-		aux[6] = "/localSpace/cloudEnergy/cloudsimStorage/evolutionary";
+		aux[6] = PlatformPaths.evolutionaryBase("cloudsimStorage");
 		
 		//Number of re-runs
 		aux[7] = "1";
 		
 		//Simulator .jar path
-		aux[8] = "/localSpace/cloudEnergy/cloudsimStorage/cloudsimStorage-release.jar";
+		aux[8] = PlatformPaths.home() + "/cloudsimStorage/cloudsimStorage.jar";
 		
 		System.out.println("Executing the experiment with config: "+arrayToString(aux, "\n"));
 		
