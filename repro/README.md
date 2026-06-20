@@ -133,18 +133,28 @@ Sequoia 15, Java 17. The full study takes on the order of days at this scale.
 
 ## Figures
 
-The HV metric is computed from the evolution logs with the bundled tooling
-(`main_scico.hv.ParetoAndHVFromLogs`, which is arg-driven: it takes a run
-directory and a `--ref <energy,time>` reference point). Collect the final HV of
-each run into `<ALGO>/hv__<config>.dat` (one value per line) and then:
+After running an experiment (Tier 2/3), generate the hypervolume (HV) boxplots
+(Fig. 5) in one step:
 
 ```bash
-./redraw_30times.sh        # gnuplot boxplot_all_algorithms.gnu + boxplot_ablation.gnu
-# -> boxplot_hv_all_algos.eps  (Fig. 5),  ablation figure (Fig. 7)
+./computeHV.sh
+# -> out/<algo>/hv__<config>.dat   and   out/boxplot_hv_all_algos.eps
 ```
 
-`boxplot_all_algorithms.gnu` expects the groups `Al_w1 Al_w3 Bl_w1 Bl_w3` and the
-algorithms `PAES2 SPEA2 NSGAII VEGA MOGA`.
+`computeHV.sh` runs `main_scico.hv.ParetoAndHVFromLogs` on every run under `out/`
+(HV per iteration), aggregates the **final** HV of each run into
+`out/<algo>/hv__<config>.dat` (one value per line), and draws
+`boxplot_all_algorithms.gnu`. Requires **gnuplot**.
+
+**Reference points.** By default the HV uses an *empirical* reference (max
+objective ×1.1 per run), which is the right choice for the bundled 20-trace
+subset. To use the paper's fixed reference points, add `--paper-ref` — but only
+with the full workload (`unzip workload.zip`), otherwise some fronts fall outside
+the fixed reference and the HV collapses to 0.
+
+The boxplot expects the groups `Al_w1 Al_w3 Bl_w1 Bl_w3` and the algorithms
+`PAES SPEA2 NSGAII VEGA MOGA` (i.e. the `out/<algo>/` folders the launchers
+create).
 
 ---
 
