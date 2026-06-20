@@ -22,6 +22,7 @@ import executor.MT_Handler;
 import main.ConfigMT;
 import mutation.MutableCloud.MutableCloud;
 import platform.SimulatorPlatforms;
+import platform.PlatformPaths;
 import transformations.TestCase2Cloud;
 
 public abstract class MOCloudOrchestrator {
@@ -316,7 +317,7 @@ public abstract class MOCloudOrchestrator {
 
 				if (mTc != null) {
 					// Load the TcInput
-					tcInput = tcParser.doParseInput(mTc.getTcInput());
+					tcInput = tcParser.doParseInput(PlatformPaths.resolveWorkspacePath(mTc.getTcInput()));
 
 					if (tcInput != null) {
 						// Set the object

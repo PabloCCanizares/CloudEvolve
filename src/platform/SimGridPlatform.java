@@ -38,7 +38,7 @@ public final class SimGridPlatform implements SimulatorPlatform {
     public boolean execute(SimulatorExecution exec, MetaTestCase metaTC) {
         exec.executeCommandSimGrid("rm -r /tmp/simgrid*");
         return exec.executeCommandSimGrid("timeout 60 java -jar /localSpace/cloudEnergy/simGrid/simGrid.jar --standalone "
-                + metaTC.getFilePath() + " &>" + metaTC.getTcOutput());
+                + metaTC.getFilePath() + " &>" + PlatformPaths.resolveWorkspacePath(metaTC.getTcOutput()));
     }
 
     @Override
