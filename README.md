@@ -64,8 +64,8 @@ checks the resulting energy/time figures are sane.
 
 The launchers under `src/main_scico/` (`Launcher_VEGA`, `Launcher_MOGA`, …) run a
 complete evolution for one algorithm against the simulator. They resolve their
-paths from `CLOUDEVOLVE_HOME` (see [Configuration](#configuration)), so point it
-at a directory holding `cloudsimStorage/cloudsimStorage.jar` and a
+paths from `CLOUDEVOLVE_WORKSPACE` (see [Configuration](#configuration)), so point
+it at a directory holding `cloudsimStorage/cloudsimStorage.jar` and a
 `cloudsimStorage/evolutionary/InitialPopulation/<case>` tree, then run e.g.
 `main_scico.Launcher_VEGA`.
 
@@ -73,21 +73,25 @@ at a directory holding `cloudsimStorage/cloudsimStorage.jar` and a
 
 ## Configuration
 
-Machine-specific paths are resolved from a single root, so you never have to edit
+The simulator and its data (jar, evolutionary runs, initial populations) are
+resolved from a single configurable **workspace root**, so you never have to edit
 source:
 
 | Source | Key | Default |
 |---|---|---|
-| Environment variable | `CLOUDEVOLVE_HOME` | `/localSpace/cloudEnergy` |
-| JVM system property | `-Dcloudevolve.home` | (overrides the env var) |
+| Environment variable | `CLOUDEVOLVE_WORKSPACE` | `/localSpace/cloudEnergy` |
+| JVM system property | `-Dcloudevolve.workspace` | (overrides the env var) |
 
 Each simulator appends its own subtree. For example, with
-`CLOUDEVOLVE_HOME=/Users/you/cloudEvolution`, CloudSim-Storage runs live under
-`/Users/you/cloudEvolution/cloudsimStorage/evolutionary`:
+`CLOUDEVOLVE_WORKSPACE=/Users/you/cloudEvolution`, CloudSim-Storage runs live
+under `/Users/you/cloudEvolution/cloudsimStorage/evolutionary`:
 
 ```bash
-export CLOUDEVOLVE_HOME=/Users/you/cloudEvolution
+export CLOUDEVOLVE_WORKSPACE=/Users/you/cloudEvolution
 ```
+
+> The previous names `CLOUDEVOLVE_HOME` / `-Dcloudevolve.home` are **deprecated**
+> but still honoured as a fallback.
 
 ---
 

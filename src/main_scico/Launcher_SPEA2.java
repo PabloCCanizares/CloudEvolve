@@ -51,7 +51,7 @@ public class Launcher_SPEA2 {
 		aux[7] = "1";
 		
 		//Simulator .jar path
-		aux[8] = PlatformPaths.home() + "/cloudsimStorage/cloudsimStorage.jar";
+		aux[8] = PlatformPaths.workspace() + "/cloudsimStorage/cloudsimStorage.jar";
 		
 		System.out.println("Executing the experiment with config: "+arrayToString(aux, "\n"));
 		
