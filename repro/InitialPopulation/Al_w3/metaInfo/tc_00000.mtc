@@ -1,8 +1,8 @@
 Id: 0
 GroupId: 0
 MutantId: 0
-InputSrc: /localSpace/cloudEnergy/cloudsimStorage/evolutionary/InitialPopulation/Al_w3/tcInput/input_00000.tc
-OutputSrc: /localSpace/cloudEnergy/cloudsimStorage/evolutionary/InitialPopulation/Al_w3/tcOutput/output_00000.tc
+InputSrc: ${workspace}/cloudsimStorage/evolutionary/InitialPopulation/Al_w3/tcInput/input_00000.tc
+OutputSrc: ${workspace}/cloudsimStorage/evolutionary/InitialPopulation/Al_w3/tcOutput/output_00000.tc
 ExecCommands: 
 isSourceTC: true
 followUpChilds: 
