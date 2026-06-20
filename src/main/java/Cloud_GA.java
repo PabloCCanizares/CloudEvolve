@@ -38,6 +38,7 @@ import dataParser.TestCaseInput;
 import dataParser.TestCaseParser;
 import dataParser.cloud.ECloudSimulator;
 import platform.SimulatorPlatforms;
+import platform.PlatformPaths;
 import dataParser.cloud.TestCaseParser_cloud;
 import dataParser.cloud.input.TcInput_cloud;
 import dataParser.metadata.MetaParser;
@@ -364,7 +365,7 @@ public class Cloud_GA extends Thread {
 
 				if (mTc != null) {
 					// Load the TcInput
-					tcInput = tcParser.doParseInput(mTc.getTcInput());
+					tcInput = tcParser.doParseInput(PlatformPaths.resolveWorkspacePath(mTc.getTcInput()));
 
 					if (tcInput != null) {
 						// Set the object

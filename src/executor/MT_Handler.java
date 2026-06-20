@@ -19,6 +19,7 @@ import dataParser.metadata.MetaTestCase;
 import main.ConfigMT;
 import platform.SimulatorExecution;
 import platform.SimulatorPlatforms;
+import platform.PlatformPaths;
 
 public class MT_Handler implements SimulatorExecution {
 
@@ -68,14 +69,14 @@ public class MT_Handler implements SimulatorExecution {
 				nTestcaseId = metaTC.getTcId();
 
 				// Parse the input
-				strPathInput = metaTC.getTcInput();
-				strPathOutput = metaTC.getTcOutput();
+				strPathInput = PlatformPaths.resolveWorkspacePath(metaTC.getTcInput());
+				strPathOutput = PlatformPaths.resolveWorkspacePath(metaTC.getTcOutput());
 
 				tcInput = oTestCaseParser.doParseInput(strPathInput);
 
 				if (tcInput != null) {
 					ConfigMT.getSingletonInstance().tcInput = (TcInput_cloud) tcInput;
-					ConfigMT.getSingletonInstance().setOutputFilename(metaTC.getTcOutput());
+					ConfigMT.getSingletonInstance().setOutputFilename(strPathOutput);
 
 					if (EAController.getInstance().getLogLevel().getValue() >= LogLevel.eVERBOSE.getValue())
 						System.out.printf("=====> Executing the test case: %d\n", nTestcaseId);

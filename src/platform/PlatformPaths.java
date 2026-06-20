@@ -59,4 +59,24 @@ public final class PlatformPaths {
     public static String evolutionaryBase(String simulatorDir) {
         return workspace() + "/" + simulatorDir + "/evolutionary";
     }
+
+    /** Token, usable in stored paths (e.g. {@code .mtc} files), that expands to {@link #workspace()}. */
+    public static final String WORKSPACE_TOKEN = "${workspace}";
+
+    /**
+     * Expands every {@link #WORKSPACE_TOKEN} in a stored path to the resolved
+     * {@link #workspace()} root, so {@code .mtc} / {@code .tc} paths can be made
+     * portable.
+     *
+     * <p>Paths <b>without</b> the token — absolute or relative — are returned
+     * unchanged, so existing data keeps resolving exactly as it does today
+     * (relative paths stay relative to the working directory). {@code null} is
+     * returned unchanged.</p>
+     */
+    public static String resolveWorkspacePath(String stored) {
+        if (stored == null || !stored.contains(WORKSPACE_TOKEN)) {
+            return stored;
+        }
+        return stored.replace(WORKSPACE_TOKEN, workspace());
+    }
 }
