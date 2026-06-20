@@ -27,7 +27,7 @@ groups = "Al_w1 Al_w3 Bl_w1 Bl_w3"
 N = words(groups)
 
 # --------- Algoritmos y colores (Okabe–Ito, apto daltónicos)
-algos = "PAES2 SPEA2 NSGAII VEGA MOGA"
+algos = "PAES SPEA2 NSGAII VEGA MOGA"
 M = words(algos)
 
 array A[M]
