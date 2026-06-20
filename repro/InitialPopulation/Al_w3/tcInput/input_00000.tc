@@ -28,7 +28,7 @@ sto.maxTransferRate = 100
 sto.latency = 5
 
 #Workload
-work.path = /localSpace/cloudEnergy/cloudsimStorage/CloudSimStorage-master/cloudsim/modules/cloudsim-examples/src/main/resources/workload/io_mix/cpu
+work.path = workload/io_mix/cpu
 work.name = mix_vm
 work.volume = 10
 work.numTraces = 10
