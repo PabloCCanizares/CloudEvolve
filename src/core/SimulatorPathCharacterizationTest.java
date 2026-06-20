@@ -30,8 +30,8 @@ public class SimulatorPathCharacterizationTest {
 
     // The base path is now resolved from a configurable root. Pin it to the
     // legacy default so these assertions stay deterministic regardless of any
-    // CLOUDEVOLVE_HOME set on the machine running the tests.
-    private static final String HOME_PROPERTY = "cloudevolve.home";
+    // CLOUDEVOLVE_WORKSPACE set on the machine running the tests.
+    private static final String HOME_PROPERTY = "cloudevolve.workspace";
     private static final String LEGACY_HOME = "/localSpace/cloudEnergy";
     private String savedHome;
 

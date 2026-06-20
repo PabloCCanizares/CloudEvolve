@@ -1,49 +1,62 @@
 package platform;
 
 /**
- * Resolves the configurable root directory under which each simulator backend
- * stores its evolutionary runs, so the base path no longer has to be hard-coded
- * per machine.
+ * Resolves the configurable <b>workspace root</b> under which the simulator and
+ * its data (evolutionary runs, initial populations, {@code .mtc} / {@code .tc})
+ * live, so the paths no longer have to be hard-coded per machine.
  *
  * <p>Resolution order (first non-empty wins):</p>
  * <ol>
- *   <li>JVM system property {@code cloudevolve.home} (handy for {@code -D}
+ *   <li>JVM system property {@code cloudevolve.workspace} (handy for {@code -D}
  *       overrides and tests),</li>
- *   <li>environment variable {@code CLOUDEVOLVE_HOME},</li>
- *   <li>the legacy default {@value #DEFAULT_HOME}.</li>
+ *   <li>environment variable {@code CLOUDEVOLVE_WORKSPACE},</li>
+ *   <li>the <b>deprecated</b> {@code cloudevolve.home} / {@code CLOUDEVOLVE_HOME},
+ *       still honoured as a fallback,</li>
+ *   <li>the default {@value #DEFAULT_WORKSPACE}.</li>
  * </ol>
  *
- * <p>Each platform appends {@code <simulatorDir>/evolutionary}; e.g. with
- * {@code CLOUDEVOLVE_HOME=/Users/pablocc/cloudEvolution} the CloudSim-Storage
+ * <p>Each simulator appends {@code <simulatorDir>/evolutionary}; e.g. with
+ * {@code CLOUDEVOLVE_WORKSPACE=/Users/pablocc/cloudEvolution} the CloudSim-Storage
  * base becomes {@code /Users/pablocc/cloudEvolution/cloudsimStorage/evolutionary}.</p>
  */
 public final class PlatformPaths {
 
-    /** System property that overrides the evolutionary-runs root. */
-    public static final String HOME_PROPERTY = "cloudevolve.home";
-    /** Environment variable that sets the evolutionary-runs root. */
-    public static final String HOME_ENV = "CLOUDEVOLVE_HOME";
-    /** Fallback root used when neither the property nor the env var is set. */
-    public static final String DEFAULT_HOME = "/localSpace/cloudEnergy";
+    /** System property that overrides the workspace root. */
+    public static final String WORKSPACE_PROPERTY = "cloudevolve.workspace";
+    /** Environment variable that sets the workspace root. */
+    public static final String WORKSPACE_ENV = "CLOUDEVOLVE_WORKSPACE";
+
+    /** @deprecated renamed to {@link #WORKSPACE_PROPERTY}; still honoured as a fallback. */
+    @Deprecated
+    public static final String LEGACY_PROPERTY = "cloudevolve.home";
+    /** @deprecated renamed to {@link #WORKSPACE_ENV}; still honoured as a fallback. */
+    @Deprecated
+    public static final String LEGACY_ENV = "CLOUDEVOLVE_HOME";
+
+    /** Fallback root used when nothing else is set. */
+    public static final String DEFAULT_WORKSPACE = "/localSpace/cloudEnergy";
 
     private PlatformPaths() {
     }
 
-    /** The configurable evolutionary-runs root, without a trailing slash. */
-    public static String home() {
-        String property = System.getProperty(HOME_PROPERTY);
-        if (property != null && !property.isEmpty()) {
-            return property;
+    /** The configurable workspace root, without a trailing slash. */
+    public static String workspace() {
+        String[] candidates = {
+                System.getProperty(WORKSPACE_PROPERTY),
+                System.getenv(WORKSPACE_ENV),
+                System.getProperty(LEGACY_PROPERTY),
+                System.getenv(LEGACY_ENV),
+        };
+        for (String candidate : candidates) {
+            if (candidate != null && !candidate.isEmpty()) {
+                return candidate;
+            }
         }
-        String env = System.getenv(HOME_ENV);
-        if (env != null && !env.isEmpty()) {
-            return env;
-        }
-        return DEFAULT_HOME;
+        return DEFAULT_WORKSPACE;
     }
 
-    /** Builds {@code <home>/<simulatorDir>/evolutionary} for a simulator. */
+    /** Builds {@code <workspace>/<simulatorDir>/evolutionary} for a simulator. */
     public static String evolutionaryBase(String simulatorDir) {
-        return home() + "/" + simulatorDir + "/evolutionary";
+        return workspace() + "/" + simulatorDir + "/evolutionary";
     }
 }

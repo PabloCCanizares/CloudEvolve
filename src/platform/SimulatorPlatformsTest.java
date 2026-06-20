@@ -5,6 +5,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,9 +20,9 @@ import dataParser.cloud.ECloudSimulator;
  * {@link #supportedSimulatorsKeepTheLegacyBasePath()} pins the two supported
  * paths and {@link #unsupportedSimulatorThrows()} pins the fail-fast contract.</p>
  *
- * <p>The root is driven through the {@code cloudevolve.home} system property so
+ * <p>The root is driven through the {@code cloudevolve.workspace} system property so
  * the assertions are deterministic regardless of any ambient
- * {@code CLOUDEVOLVE_HOME} on the developer's machine.</p>
+ * {@code CLOUDEVOLVE_WORKSPACE} on the developer's machine.</p>
  */
 public class SimulatorPlatformsTest {
 
@@ -29,16 +30,16 @@ public class SimulatorPlatformsTest {
 
     @Before
     public void pinHomeToLegacyDefault() {
-        savedHome = System.getProperty(PlatformPaths.HOME_PROPERTY);
-        System.setProperty(PlatformPaths.HOME_PROPERTY, PlatformPaths.DEFAULT_HOME);
+        savedHome = System.getProperty(PlatformPaths.WORKSPACE_PROPERTY);
+        System.setProperty(PlatformPaths.WORKSPACE_PROPERTY, PlatformPaths.DEFAULT_WORKSPACE);
     }
 
     @After
     public void restoreHome() {
         if (savedHome == null) {
-            System.clearProperty(PlatformPaths.HOME_PROPERTY);
+            System.clearProperty(PlatformPaths.WORKSPACE_PROPERTY);
         } else {
-            System.setProperty(PlatformPaths.HOME_PROPERTY, savedHome);
+            System.setProperty(PlatformPaths.WORKSPACE_PROPERTY, savedHome);
         }
     }
 
@@ -59,7 +60,7 @@ public class SimulatorPlatformsTest {
     /** A configured root is honoured, with each simulator keeping its subtree. */
     @Test
     public void respectsConfiguredHome() {
-        System.setProperty(PlatformPaths.HOME_PROPERTY, "/Users/pablocc/cloudEvolution");
+        System.setProperty(PlatformPaths.WORKSPACE_PROPERTY, "/Users/pablocc/cloudEvolution");
 
         assertEquals("/Users/pablocc/cloudEvolution/cloudsimStorage/evolutionary",
                 SimulatorPlatforms.of(ECloudSimulator.eCLOUDSIMSTORAGE).evolutionaryBasePath());
@@ -78,5 +79,24 @@ public class SimulatorPlatformsTest {
                     IllegalArgumentException.class, () -> SimulatorPlatforms.of(s));
         }
         assertThrows(IllegalArgumentException.class, () -> SimulatorPlatforms.of(null));
+    }
+
+    /**
+     * Back-compat: when the new {@code cloudevolve.workspace} is absent, the
+     * deprecated {@code cloudevolve.home} / {@code CLOUDEVOLVE_HOME} is still
+     * honoured as a fallback.
+     */
+    @Test
+    public void deprecatedHomePropertyIsHonouredAsFallback() {
+        Assume.assumeTrue("ambient CLOUDEVOLVE_WORKSPACE would take precedence",
+                System.getenv(PlatformPaths.WORKSPACE_ENV) == null);
+        System.clearProperty(PlatformPaths.WORKSPACE_PROPERTY);
+        System.setProperty(PlatformPaths.LEGACY_PROPERTY, "/legacy/root");
+        try {
+            assertEquals("/legacy/root/cloudsimStorage/evolutionary",
+                    SimulatorPlatforms.of(ECloudSimulator.eCLOUDSIMSTORAGE).evolutionaryBasePath());
+        } finally {
+            System.clearProperty(PlatformPaths.LEGACY_PROPERTY);
+        }
     }
 }
