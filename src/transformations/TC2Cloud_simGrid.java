@@ -72,8 +72,38 @@ public class TC2Cloud_simGrid implements TestCaseTransformations {
 	@Override
 	public TestCaseInput transformCloud2Testcase(ECloudSimulator ePlatformInfo, TestCaseInput tcInputNew,
 			MutableCloud mutCloud) {
-		// TODO Auto-generated method stub
-		return null;
+		TcInput_cloud tcInput;
+
+		tcInput = null;
+
+		if (mutCloud != null && tcInputNew != null) {
+			// The main idea is to clone the tcinput, and modify only the parts that the algorithm needs
+			tcInput = (TcInput_cloud) tcInputNew;
+
+			// Save XML model
+			tcInput.setCloudModel((IModel) mutCloud.getCloudSystem());
+
+			// Quantity
+			tcInput.setHostQuantity(mutCloud.getNumHosts());
+
+			// CPU
+			tcInput.setHostMips((int) mutCloud.getMips());
+
+			// RAM: N.A.
+
+			// RAMSPEED: N.A.
+
+			// STO
+			tcInput.setIOMaxRate((int) mutCloud.getIORate());
+
+			// NetBW
+			tcInput.setNetBandwidth((int) mutCloud.getNetPerformance());
+
+			// LATENCY
+			tcInput.setNetLatency((int) mutCloud.getNetLatency());
+		}
+
+		return tcInput;
 	}
 	private MutableCloud transformSimGrid(TestCaseInput tcInput) {
 		MutableCloud mutableCloud;

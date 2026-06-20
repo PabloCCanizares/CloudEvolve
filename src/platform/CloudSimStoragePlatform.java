@@ -6,6 +6,8 @@ import java.util.List;
 import configuration.EACrossoverOperator;
 import configuration.EAMutationOperator;
 import dataParser.metadata.MetaTestCase;
+import transformations.TC2Cloud_cloudSim;
+import transformations.TestCaseTransformations;
 
 /** {@link SimulatorPlatform} for the CloudSim-Storage backend. */
 public final class CloudSimStoragePlatform implements SimulatorPlatform {
@@ -41,5 +43,10 @@ public final class CloudSimStoragePlatform implements SimulatorPlatform {
         // hosts (e.g. es_ES) the energy/time would otherwise be read back as -1.
         return exec.executeCommand(exec.timeoutHeader() + " 60 java -Duser.language=en -Duser.country=US -jar "
                 + exec.simulatorPath() + " --standalone " + metaTC.getFilePath());
+    }
+
+    @Override
+    public TestCaseTransformations transformations() {
+        return new TC2Cloud_cloudSim();
     }
 }

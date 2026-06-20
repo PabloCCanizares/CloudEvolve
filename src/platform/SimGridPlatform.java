@@ -6,6 +6,8 @@ import java.util.List;
 import configuration.EACrossoverOperator;
 import configuration.EAMutationOperator;
 import dataParser.metadata.MetaTestCase;
+import transformations.TC2Cloud_simGrid;
+import transformations.TestCaseTransformations;
 
 /** {@link SimulatorPlatform} for the SimGrid backend. */
 public final class SimGridPlatform implements SimulatorPlatform {
@@ -37,5 +39,10 @@ public final class SimGridPlatform implements SimulatorPlatform {
         exec.executeCommandSimGrid("rm -r /tmp/simgrid*");
         return exec.executeCommandSimGrid("timeout 60 java -jar /localSpace/cloudEnergy/simGrid/simGrid.jar --standalone "
                 + metaTC.getFilePath() + " &>" + metaTC.getTcOutput());
+    }
+
+    @Override
+    public TestCaseTransformations transformations() {
+        return new TC2Cloud_simGrid();
     }
 }
