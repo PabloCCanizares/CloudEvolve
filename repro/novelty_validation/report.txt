@@ -1,0 +1,7 @@
+Novelty-detector validation  (target=energy_kwh, n=997, bad = error>10% -> 38 of 997)
+surrogate error on test set: mean 28.92%  median 0.22%
+
+detector    Spearman  ROC-AUC err@top10% err@top20%
+leaf           0.879    0.915      48.4%      50.8%
+distance       0.885    0.945      29.2%      58.0%
+embedding      0.745    0.939      48.3%      50.9%
