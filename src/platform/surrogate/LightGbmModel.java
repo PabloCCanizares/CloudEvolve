@@ -117,8 +117,10 @@ public final class LightGbmModel {
                     + "). Retrain the surrogate with numerical-only features or extend LightGbmModel.");
         }
         double[] leafValue = parseDoubles(b.get("leaf_value"));
+        int[] leafCount = parseInts(b.get("leaf_count"));
         if (numLeaves <= 1 || !b.containsKey("split_feature")) {
-            return Tree.singleLeaf(leafValue.length > 0 ? leafValue[0] : 0.0);
+            return Tree.singleLeaf(leafValue.length > 0 ? leafValue[0] : 0.0,
+                    leafCount.length > 0 ? leafCount[0] : 0);
         }
         int[] splitFeature = parseInts(b.get("split_feature"));
         double[] threshold = parseDoubles(b.get("threshold"));
@@ -131,7 +133,7 @@ public final class LightGbmModel {
                         + "); not supported by LightGbmModel.");
             }
         }
-        return new Tree(splitFeature, threshold, decisionType, leftChild, rightChild, leafValue);
+        return new Tree(splitFeature, threshold, decisionType, leftChild, rightChild, leafValue, leafCount);
     }
 
     private static List<List<String>> parsePandasCategorical(String s) {
@@ -211,25 +213,32 @@ public final class LightGbmModel {
         private final int[] leftChild;
         private final int[] rightChild;
         private final double[] leafValue;
+        private final int[] leafCount;   // training samples per leaf (for the novelty signal)
 
         private Tree(int[] splitFeature, double[] threshold, int[] decisionType,
-                int[] leftChild, int[] rightChild, double[] leafValue) {
+                int[] leftChild, int[] rightChild, double[] leafValue, int[] leafCount) {
             this.splitFeature = splitFeature;
             this.threshold = threshold;
             this.decisionType = decisionType;
             this.leftChild = leftChild;
             this.rightChild = rightChild;
             this.leafValue = leafValue;
+            this.leafCount = leafCount;
         }
 
-        static Tree singleLeaf(double value) {
+        static Tree singleLeaf(double value, int count) {
             return new Tree(new int[0], new double[0], new int[0], new int[0], new int[0],
-                    new double[] { value });
+                    new double[] { value }, new int[] { count });
         }
 
         double evaluate(double[] x) {
+            return leafValue[leafIndex(x)];
+        }
+
+        /** Index of the leaf the feature vector reaches. */
+        int leafIndex(double[] x) {
             if (splitFeature.length == 0) { // single-leaf tree
-                return leafValue[0];
+                return 0;
             }
             int node = 0;
             while (node >= 0) {
@@ -247,7 +256,26 @@ public final class LightGbmModel {
                 boolean goLeft = isMissing ? defaultLeft : (fval <= threshold[node]);
                 node = goLeft ? leftChild[node] : rightChild[node];
             }
-            return leafValue[~node]; // negative child encodes a leaf as ~leafIndex
+            return ~node; // negative child encodes a leaf as ~leafIndex
         }
+
+        /** 1/(leafSupport+1): high when the config lands in a sparsely-trained leaf. */
+        double novelty(double[] x) {
+            int li = leafIndex(x);
+            int c = (leafCount != null && li >= 0 && li < leafCount.length) ? leafCount[li] : 0;
+            return 1.0 / (c + 1.0);
+        }
+    }
+
+    /**
+     * Mean leaf-support novelty across the trees: higher means the input lands in
+     * leaves backed by few training samples (a sparse, low-confidence region).
+     */
+    public double leafNovelty(double[] x) {
+        double sum = 0.0;
+        for (Tree t : trees) {
+            sum += t.novelty(x);
+        }
+        return sum / trees.length;
     }
 }

@@ -59,8 +59,11 @@ public final class HybridPlatform implements SimulatorPlatform {
 
     private final SimulatorPlatform surrogate = new SurrogatePlatform();
     private final SimulatorPlatform real = SimulatorPlatforms.of(realBackend());
-    private final int realEvery = intProperty(REAL_EVERY_PROPERTY, 5);
     private final SampleLogger logger = new SampleLogger(incrementPath(), FEATURE_COLUMNS);
+
+    private volatile SurrogateModel model;        // for the prediction + novelty (lazy)
+    private volatile RealEvaluationPolicy policy;  // when to ratify with the real simulator (lazy)
+    private volatile boolean initialised;
 
     @Override
     public String evolutionaryBasePath() {
@@ -84,23 +87,53 @@ public final class HybridPlatform implements SimulatorPlatform {
 
     @Override
     public boolean execute(SimulatorExecution exec, MetaTestCase metaTC) {
-        if (useRealSimulator()) {
-            boolean ok = real.execute(exec, metaTC);
-            if (ok) {
-                logSample(metaTC);
+        try {
+            ensureInitialised();
+            int generation = EAController.getInstance().getIteration();
+            double[] prediction = { 0.0, 0.0 };
+            double novelty = 0.0;
+            if (model != null) {
+                Map<String, String> features =
+                        SurrogateModel.readTestCase(PlatformPaths.resolveWorkspacePath(metaTC.getTcInput()));
+                prediction = model.predict(features);
+                novelty = model.novelty(features);
             }
-            return ok;
+            if (policy.shouldRatify(prediction, new RealEvaluationPolicy.Context(generation, novelty))) {
+                boolean ok = real.execute(exec, metaTC);
+                if (ok) {
+                    logSample(metaTC);
+                }
+                return ok;
+            }
+        } catch (Exception e) {
+            System.out.println("HybridPlatform: routing fell back to surrogate (" + e.getMessage() + ")");
         }
         return surrogate.execute(exec, metaTC);
     }
 
-    /** True on generations that are a (non-zero) multiple of N. */
-    private boolean useRealSimulator() {
-        if (realEvery <= 0) {
-            return false;
+    /** Lazily loads the surrogate model and builds the ratification policy from config. */
+    private void ensureInitialised() {
+        if (initialised) {
+            return;
         }
-        int generation = EAController.getInstance().getIteration();
-        return generation % realEvery == 0;
+        synchronized (this) {
+            if (initialised) {
+                return;
+            }
+            String dir = System.getProperty(SurrogatePlatform.SURROGATE_DIR_PROPERTY, "");
+            if (!dir.isEmpty()) {
+                try {
+                    model = SurrogateModel.load(dir);
+                } catch (Exception e) {
+                    System.out.println("HybridPlatform: could not load surrogate model for the policy ("
+                            + e.getMessage() + "); falling back to the calendar policy.");
+                }
+            }
+            policy = model != null
+                    ? RealEvaluationPolicies.fromConfig(model)
+                    : RealEvaluationPolicies.everyN(intProperty(REAL_EVERY_PROPERTY, 5));
+            initialised = true;
+        }
     }
 
     /** Logs the just-produced real evaluation (features + real labels) for re-training. */

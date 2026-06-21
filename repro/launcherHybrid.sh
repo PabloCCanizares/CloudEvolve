@@ -22,6 +22,9 @@ MUT_CODE=0
 RULE_BASE=1
 RERUNS=1
 REAL_EVERY=5
+POLICY="novelty,implausible,everyN"   # ratify if OOD OR implausible OR every N gens
+MAX_PER_GEN=8                          # real-simulator budget per generation
+GUARD="clamp"                          # plausibility guard on surrogate predictions
 BASE_OUT_DEFAULT="${REPRO_DIR}/out_hybrid"
 MODEL_DIR="${REPRO_DIR}/../lib/surrogate"
 SIM_JAR="${REPRO_DIR}/cloudsimStorage.jar"
@@ -54,7 +57,7 @@ EOF
 ALGO="${ALGO_DEFAULT}"
 BASE_OUT="${BASE_OUT_DEFAULT}"
 
-while getopts ":a:n:i:m:r:e:o:p:s:S:c:l:h" opt; do
+while getopts ":a:n:i:m:r:e:o:p:s:S:c:l:P:C:g:h" opt; do
   case "$opt" in
     a) ALGO="$OPTARG" ;;
     n) EXPERIMENT_NAME="$OPTARG" ;;
@@ -68,6 +71,9 @@ while getopts ":a:n:i:m:r:e:o:p:s:S:c:l:h" opt; do
     S) SIM_JAR="$OPTARG" ;;
     c) INCREMENT="$OPTARG" ;;
     l) LAUNCHER_JAR="$OPTARG" ;;
+    P) POLICY="$OPTARG" ;;
+    C) MAX_PER_GEN="$OPTARG" ;;
+    g) GUARD="$OPTARG" ;;
     h|*) usage ;;
   esac
 done
@@ -86,17 +92,21 @@ echo "Running (HYBRID backend):"
 echo "  Algorithm     : ${ALGO}"
 echo "  Configuration : ${EXPERIMENT_NAME}"
 echo "  Iterations    : ${ITERATIONS}"
-echo "  Real every    : ${REAL_EVERY} generations"
+echo "  Policy        : ${POLICY}  (cap ${MAX_PER_GEN}/gen, everyN=${REAL_EVERY})"
+echo "  Guard         : ${GUARD}"
 echo "  Model dir     : ${MODEL_DIR}"
 echo "  Simulator jar : ${SIM_JAR}"
 echo "  Increment CSV : ${INCREMENT}"
 echo
 
 # The last argument (simulator path) is the real backend's jar; the surrogate
-# model dir, the real-every cadence and the increment file go via system props.
+# model dir and the ratification policy go via system properties.
 exec java -Duser.language=en -Duser.country=US \
   -Dcloudevolve.surrogate.dir="${MODEL_DIR}" \
+  -Dcloudevolve.surrogate.guard="${GUARD}" \
+  -Dcloudevolve.hybrid.policy="${POLICY}" \
   -Dcloudevolve.hybrid.realEvery="${REAL_EVERY}" \
+  -Dcloudevolve.hybrid.maxRealPerGen="${MAX_PER_GEN}" \
   -Dcloudevolve.hybrid.increment="${INCREMENT}" \
   -jar "${LAUNCHER_JAR}" \
   "${ALGO}" \

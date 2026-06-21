@@ -38,16 +38,38 @@ public final class SurrogateModel {
     private final List<List<String>> categories;  // shared pandas_categorical
     private final double[] energyBounds;          // {min,max} from the spec, or null
     private final double[] timeBounds;
+    private final double noveltyThreshold;        // default OOD threshold from the spec, or NaN
     private final String guard;
 
-    private SurrogateModel(LightGbmModel energy, LightGbmModel time, double[][] bounds) {
+    private SurrogateModel(LightGbmModel energy, LightGbmModel time, double[][] bounds, double noveltyThreshold) {
         this.energy = energy;
         this.time = time;
         this.featureNames = energy.featureNames();
         this.categories = energy.pandasCategorical();
         this.energyBounds = bounds != null ? bounds[0] : null;
         this.timeBounds = bounds != null ? bounds[1] : null;
+        this.noveltyThreshold = noveltyThreshold;
         this.guard = System.getProperty(GUARD_PROPERTY, "nonneg").toLowerCase();
+    }
+
+    /** {min,max} energy bounds from the spec, or null. */
+    public double[] energyBounds() {
+        return energyBounds;
+    }
+
+    /** {min,max} time bounds from the spec, or null. */
+    public double[] timeBounds() {
+        return timeBounds;
+    }
+
+    /** Default novelty (OOD) threshold from the spec, or NaN if not provided. */
+    public double noveltyThreshold() {
+        return noveltyThreshold;
+    }
+
+    /** Leaf-support novelty of a parsed {@code .tc} (from the energy model). */
+    public double novelty(Map<String, String> testCase) {
+        return energy.leafNovelty(features(testCase));
     }
 
     /**
@@ -65,8 +87,23 @@ public final class SurrogateModel {
             throw new IOException("Surrogate models not found in '" + d + "' (expected "
                     + ENERGY_FILE + " and " + TIME_FILE + ").");
         }
+        File spec = new File(d, SPEC_FILE);
         return new SurrogateModel(LightGbmModel.load(e.getPath()), LightGbmModel.load(t.getPath()),
-                readTargetBounds(new File(d, SPEC_FILE)));
+                readTargetBounds(spec), readNoveltyThreshold(spec));
+    }
+
+    /** Reads {@code novelty_threshold} from the spec, or NaN if absent. */
+    private static double readNoveltyThreshold(File spec) {
+        if (!spec.isFile()) {
+            return Double.NaN;
+        }
+        try {
+            String s = new String(Files.readAllBytes(spec.toPath()), StandardCharsets.UTF_8);
+            Matcher m = Pattern.compile("\"novelty_threshold\"\\s*:\\s*(-?[0-9.eE+]+)").matcher(s);
+            return m.find() ? Double.parseDouble(m.group(1)) : Double.NaN;
+        } catch (Exception e) {
+            return Double.NaN;
+        }
     }
 
     /**

@@ -112,14 +112,24 @@ repro/compareSurrogate.sh --evolve -a eNSGAII -n Al_w1 -i 6   # needs gnuplot
 ### Hybrid backend + re-training loop
 
 A fourth backend, `eHYBRID` ([`platform.HybridPlatform`](src/platform/HybridPlatform.java)),
-combines both: it evaluates with the surrogate but routes evaluations to the
-**real simulator every N generations**, so the accurate values flow back into
-NSGA-II's selection (self-correction) and are logged to `surrogate_increment.csv`.
-The real backend is injectable (`-Dcloudevolve.hybrid.real`, default
-CloudSim-Storage), so the hybrid composes with any simulator.
+combines both: it evaluates with the surrogate but **ratifies selected evaluations
+with the real simulator**, so the accurate values flow back into NSGA-II's
+selection (self-correction) and are logged to `surrogate_increment.csv`. The real
+backend is injectable (`-Dcloudevolve.hybrid.real`, default CloudSim-Storage).
+
+When to ratify is a pluggable [`RealEvaluationPolicy`](src/platform/RealEvaluationPolicy.java)
+(`-Dcloudevolve.hybrid.policy`, default `novelty,implausible,everyN`, combined and
+bounded by `-Dcloudevolve.hybrid.maxRealPerGen`):
+
+- `novelty` — out-of-distribution score above a threshold (leaf support; the
+  signal validated as best in `repro/novelty_validation`) — ratifies exactly the
+  configs the surrogate is least sure about, catching phantoms *at birth*;
+- `implausible` — prediction outside the training target range;
+- `everyN` / `probability` — calendar / random baselines.
 
 ```bash
-repro/launcherHybrid.sh -a eNSGAII -n Al_w1 -i 20 -e 5   # real simulator every 5 generations
+repro/launcherHybrid.sh -a eNSGAII -n Al_w1 -i 20          # default OOD policy, cap 8/gen
+repro/launcherHybrid.sh -a eNSGAII -n Al_w1 -i 20 -P everyN -e 5   # plain calendar policy
 ```
 
 Because the hybrid spends its real budget where the search converges (the region
