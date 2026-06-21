@@ -1,12 +1,9 @@
 package platform;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -68,7 +65,7 @@ public final class SurrogatePlatform implements SimulatorPlatform {
     public boolean execute(SimulatorExecution exec, MetaTestCase metaTC) {
         try {
             Map<String, String> testCase =
-                    readTestCase(PlatformPaths.resolveWorkspacePath(metaTC.getTcInput()));
+                    SurrogateModel.readTestCase(PlatformPaths.resolveWorkspacePath(metaTC.getTcInput()));
             SurrogateModel model = modelFor(exec.simulatorPath());
             double[] prediction = model.predict(testCase);     // {energy_kwh, sim_time_sec}
             writeOutput(PlatformPaths.resolveWorkspacePath(metaTC.getTcOutput()),
@@ -108,25 +105,6 @@ public final class SurrogatePlatform implements SimulatorPlatform {
         return d != null
                 && new File(d, SurrogateModel.ENERGY_FILE).isFile()
                 && new File(d, SurrogateModel.TIME_FILE).isFile();
-    }
-
-    /** Parses a {@code key = value} cloud test case into a {@code name -> value} map. */
-    static Map<String, String> readTestCase(String path) throws IOException {
-        Map<String, String> map = new LinkedHashMap<>();
-        try (BufferedReader r = new BufferedReader(new FileReader(path))) {
-            String line;
-            while ((line = r.readLine()) != null) {
-                String trimmed = line.trim();
-                if (trimmed.isEmpty() || trimmed.charAt(0) == '#') {
-                    continue;
-                }
-                int eq = line.indexOf('=');
-                if (eq > 0) {
-                    map.put(line.substring(0, eq).trim(), line.substring(eq + 1).trim());
-                }
-            }
-        }
-        return map;
     }
 
     /**

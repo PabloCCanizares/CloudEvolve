@@ -1,7 +1,10 @@
 package platform.surrogate;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -49,6 +52,30 @@ public final class SurrogateModel {
                     + ENERGY_FILE + " and " + TIME_FILE + ").");
         }
         return new SurrogateModel(LightGbmModel.load(e.getPath()), LightGbmModel.load(t.getPath()));
+    }
+
+    /** Parses a {@code key = value} cloud test case into a {@code name -> value} map. */
+    public static Map<String, String> readTestCase(String path) throws IOException {
+        Map<String, String> map = new LinkedHashMap<>();
+        try (BufferedReader r = new BufferedReader(new FileReader(path))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                String trimmed = line.trim();
+                if (trimmed.isEmpty() || trimmed.charAt(0) == '#') {
+                    continue;
+                }
+                int eq = line.indexOf('=');
+                if (eq > 0) {
+                    map.put(line.substring(0, eq).trim(), line.substring(eq + 1).trim());
+                }
+            }
+        }
+        return map;
+    }
+
+    /** Predicted {@code {energy_kwh, sim_time_sec}} for a {@code .tc} file. */
+    public double[] predictFile(String tcPath) throws IOException {
+        return predict(readTestCase(tcPath));
     }
 
     /** Predicted {@code {energy_kwh, sim_time_sec}} for a parsed {@code .tc}. */

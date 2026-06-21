@@ -91,6 +91,16 @@ cd repro
 ./launcherSurrogate.sh -a eNSGAII -n Al_w3 -i 100
 ```
 
+To see how good (and how fast) the surrogate is versus the real simulator, run
+the comparison tool ([`main.java.SurrogateComparison`](src/main/java/SurrogateComparison.java)).
+It prints a per-evaluation accuracy table (surrogate vs the recorded simulator
+output for every bundled config), the surrogate's throughput, and a live
+wall-clock head-to-head:
+
+```bash
+repro/compareSurrogate.sh          # add --no-sim to skip the live simulator run
+```
+
 ---
 
 ## Configuration

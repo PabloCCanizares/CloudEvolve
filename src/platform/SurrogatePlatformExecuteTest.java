@@ -51,7 +51,7 @@ public class SurrogatePlatformExecuteTest {
 
         // What the model predicts directly (raw energy_kwh, sim_time_sec)...
         SurrogateModel model = SurrogateModel.load(MODEL_DIR);
-        double[] pred = model.predict(SurrogatePlatform.readTestCase(input.getPath()));
+        double[] pred = model.predict(SurrogateModel.readTestCase(input.getPath()));
         double energy = pred[0];
         double time = pred[1];
 
