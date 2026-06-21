@@ -101,6 +101,14 @@ wall-clock head-to-head:
 repro/compareSurrogate.sh          # add --no-sim to skip the live simulator run
 ```
 
+With `--evolve` it additionally runs the **same short evolution twice** (real
+simulator vs surrogate), then plots the best-so-far **energy** and **time** per
+generation into two comparison graphs under `repro/out_compare/`:
+
+```bash
+repro/compareSurrogate.sh --evolve -a eNSGAII -n Al_w1 -i 6   # needs gnuplot
+```
+
 ---
 
 ## Configuration

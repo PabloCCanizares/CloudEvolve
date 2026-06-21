@@ -17,12 +17,21 @@ package main.java;
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  ******************************************************************************/
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import dataParser.cloud.ECloudSimulator;
 import dataParser.cloud.TestCaseParser_cloud;
@@ -51,6 +60,16 @@ import platform.surrogate.SurrogateModel;
  */
 public class SurrogateComparison {
 
+    private static final String DECIMAL = "([0-9]+(?:[\\.,][0-9]+)?)";
+    private static final Pattern P_ENERGY = Pattern.compile(
+            "^total\\s+energy\\s+consumption\\s*\\(CPU\\+storage\\):\\s*" + DECIMAL + "\\s*kWh\\s*$",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern P_TIME = Pattern.compile(
+            "^total\\s+simulation\\s+time:\\s*" + DECIMAL + "\\s*sec\\s*$",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern P_ITERLINE = Pattern.compile("^\\s*(\\d+)\\s*-\\s*\\[([^\\]]+)\\]\\s*$");
+    private static final Pattern P_OUTPUT_NAME = Pattern.compile("^output_(\\d+)\\.tc$");
+
     /** A configuration with both its input .tc and the recorded real output .tc. */
     private static final class GroundTruthCase {
         final String name;
@@ -68,14 +87,25 @@ public class SurrogateComparison {
         String modelDir = "lib/surrogate";
         String reproDir = "repro";
         boolean runSimulator = true;
+        boolean evolve = false;
+        String algo = "eNSGAII";
+        String config = "Al_w1";   // the lightest case -> fastest real-simulator run
+        int iterations = 6;
+        String outDir = "repro/out_compare";
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "-m": modelDir = args[++i]; break;
                 case "-r": reproDir = args[++i]; break;
                 case "--no-sim": runSimulator = false; break;
+                case "--evolve": evolve = true; break;
+                case "-a": algo = args[++i]; break;
+                case "-n": config = args[++i]; break;
+                case "-i": iterations = Integer.parseInt(args[++i]); break;
+                case "-o": outDir = args[++i]; break;
                 case "-h": case "--help":
                     System.out.println("Usage: SurrogateComparison [-m modelDir] [-r reproDir] [--no-sim]");
+                    System.out.println("       [--evolve [-a ALGO] [-n CONFIG] [-i ITERS] [-o OUT_DIR]]");
                     return;
                 default:
                     System.out.println("Unknown argument: " + args[i]);
@@ -126,7 +156,11 @@ public class SurrogateComparison {
         measureSurrogateSpeed(model, cases.get(0).inputTc.getPath());
 
         File simulatorJar = new File(reproDir, "cloudsimStorage.jar");
-        if (runSimulator && simulatorJar.isFile()) {
+        if (evolve) {
+            // The end-to-end evolution already runs the real simulator extensively,
+            // so the single-case head-to-head is redundant here.
+            runEvolutionComparison(reproDir, modelDir, algo, config, iterations, outDir);
+        } else if (runSimulator && simulatorJar.isFile()) {
             headToHead(model, reproDir, simulatorJar);
         } else if (runSimulator) {
             System.out.println("(real-simulator head-to-head skipped: " + simulatorJar + " not found)");
@@ -253,6 +287,237 @@ public class SurrogateComparison {
             if (backup != null) {
                 Files.write(outputTc.toPath(), backup);
             }
+        }
+    }
+
+    /* ===================== End-to-end evolution comparison ===================== */
+
+    /**
+     * Runs the same short evolution twice — once with the real simulator, once
+     * with the surrogate — extracts the best-so-far energy and time per
+     * generation, and renders two comparison graphs.
+     */
+    private static void runEvolutionComparison(String reproDir, String modelDir, String algo,
+            String config, int iterations, String outDir) throws Exception {
+        System.out.println("=========================================================================");
+        System.out.println(" End-to-end evolution: real simulator vs surrogate");
+        System.out.printf(Locale.US, " %s on %s, %d generations%n", algo, config, iterations);
+        System.out.println("=========================================================================");
+
+        File out = new File(outDir);
+        File realOut = new File(out, "real");
+        File surrOut = new File(out, "surrogate");
+        realOut.mkdirs();
+        surrOut.mkdirs();
+
+        System.out.println(" Running REAL-simulator evolution (the slow one)...");
+        long realMs = runLauncher(new String[] { "bash", reproDir + "/launcherSingleConf.sh",
+                "-a", algo, "-n", config, "-i", String.valueOf(iterations), "-o", realOut.getAbsolutePath() },
+                new File(out, "real.log"));
+
+        System.out.println(" Running SURROGATE evolution...");
+        // The launcher cd's into repro/, so the model dir must be absolute.
+        String modelDirAbs = new File(modelDir).getAbsolutePath();
+        long surrMs = runLauncher(new String[] { "bash", reproDir + "/launcherSurrogate.sh",
+                "-a", algo, "-n", config, "-i", String.valueOf(iterations), "-o", surrOut.getAbsolutePath(),
+                "-s", modelDirAbs }, new File(out, "surrogate.log"));
+
+        File realRun = findRunDir(realOut);
+        File surrRun = findRunDir(surrOut);
+        if (realRun == null || surrRun == null) {
+            System.out.println(" Could not locate run directories; see the .log files under " + out);
+            return;
+        }
+
+        TreeMap<Integer, double[]> realTraj = extractTrajectory(realRun); // gen -> {energy, time}
+        TreeMap<Integer, double[]> surrTraj = extractTrajectory(surrRun);
+
+        File energyDat = new File(out, "energy_evolution.dat");
+        File timeDat = new File(out, "time_evolution.dat");
+        writeMerged(energyDat, realTraj, surrTraj, 0, "# generation  real_energy_kWh  surrogate_energy_kWh");
+        writeMerged(timeDat, realTraj, surrTraj, 1, "# generation  real_time_s  surrogate_time_s");
+
+        File energyGnu = writeGnuplot(out, "energy_evolution", energyDat.getName(),
+                "Energy: real simulator vs surrogate", "Best energy so far (kWh)");
+        File timeGnu = writeGnuplot(out, "time_evolution", timeDat.getName(),
+                "Time: real simulator vs surrogate", "Best simulation time so far (s)");
+        boolean plotted = runGnuplot(out, energyGnu) & runGnuplot(out, timeGnu);
+
+        int lastGen = realTraj.isEmpty() ? -1 : realTraj.lastKey();
+        System.out.println("-------------------------------------------------------------------------");
+        if (lastGen >= 0 && surrTraj.containsKey(lastGen)) {
+            double[] r = realTraj.get(lastGen);
+            double[] s = surrTraj.get(lastGen);
+            System.out.printf(Locale.US, " final best energy: real %.3f kWh | surrogate %.3f kWh (%.1f%% off)%n",
+                    r[0], s[0], ape(r[0], s[0]));
+            System.out.printf(Locale.US, " final best time  : real %.1f s   | surrogate %.1f s   (%.1f%% off)%n",
+                    r[1], s[1], ape(r[1], s[1]));
+        }
+        System.out.printf(Locale.US, " wall time        : real %.1f s | surrogate %.1f s  (~%.0fx faster)%n",
+                realMs / 1000.0, surrMs / 1000.0, surrMs > 0 ? (double) realMs / surrMs : 0.0);
+        System.out.println(" data : " + energyDat.getPath() + ", " + timeDat.getPath());
+        if (plotted) {
+            System.out.println(" plots: " + new File(out, "energy_evolution.png").getPath()
+                    + ", " + new File(out, "time_evolution.png").getPath());
+        } else {
+            System.out.println(" gnuplot unavailable — .dat and .gnu written; render with: "
+                    + "(cd " + out + " && gnuplot energy_evolution.gnu time_evolution.gnu)");
+        }
+    }
+
+    /** Runs a launcher subprocess, redirecting its (verbose) output to {@code log}; returns wall ms. */
+    private static long runLauncher(String[] cmd, File log) throws Exception {
+        long t0 = System.nanoTime();
+        Process p = new ProcessBuilder(cmd)
+                .redirectErrorStream(true)
+                .redirectOutput(log)
+                .start();
+        int code = p.waitFor();
+        if (code != 0) {
+            System.out.println("   WARNING: launcher exited with code " + code + " (see " + log + ")");
+        }
+        return (long) ((System.nanoTime() - t0) / 1_000_000.0);
+    }
+
+    /** Finds the run directory (the one holding iterationlist.txt) under a launcher output dir. */
+    private static File findRunDir(File outDir) throws Exception {
+        try (java.util.stream.Stream<Path> walk = Files.walk(outDir.toPath())) {
+            return walk.filter(pp -> pp.getFileName().toString().equals("iterationlist.txt"))
+                    .map(pp -> pp.getParent().toFile())
+                    .findFirst().orElse(null);
+        }
+    }
+
+    /**
+     * Best-so-far (cumulative minimum) energy and time per generation. Energy is
+     * the fitness energy (raw total × time/3600), matching what the GA optimises.
+     */
+    private static TreeMap<Integer, double[]> extractTrajectory(File runDir) throws Exception {
+        Map<Integer, double[]> idToPoint = new HashMap<>();   // id -> {rawEnergy, time}
+        File[] subs = runDir.listFiles(File::isDirectory);
+        if (subs != null) {
+            for (File sub : subs) {
+                File tcOut = new File(sub, "TcOutput");
+                File[] outs = tcOut.listFiles();
+                if (outs == null) {
+                    continue;
+                }
+                for (File f : outs) {
+                    Matcher nm = P_OUTPUT_NAME.matcher(f.getName());
+                    if (nm.matches()) {
+                        double[] pt = parsePoint(f);
+                        if (pt != null) {
+                            idToPoint.put(Integer.parseInt(nm.group(1)), pt);
+                        }
+                    }
+                }
+            }
+        }
+
+        TreeMap<Integer, double[]> traj = new TreeMap<>();
+        double cumEnergy = Double.POSITIVE_INFINITY;
+        double cumTime = Double.POSITIVE_INFINITY;
+        try (BufferedReader br = new BufferedReader(new FileReader(new File(runDir, "iterationlist.txt")))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                Matcher m = P_ITERLINE.matcher(line);
+                if (!m.matches()) {
+                    continue;
+                }
+                int gen = Integer.parseInt(m.group(1));
+                for (String tok : m.group(2).trim().split("\\s+")) {
+                    int id;
+                    try {
+                        id = Integer.parseInt(tok);
+                    } catch (NumberFormatException e) {
+                        continue;
+                    }
+                    double[] pt = idToPoint.get(id);
+                    if (pt == null || pt[0] <= 0 || pt[1] <= 0) {
+                        continue;
+                    }
+                    double fitnessEnergy = pt[0] * pt[1] / 3600.0;
+                    cumEnergy = Math.min(cumEnergy, fitnessEnergy);
+                    cumTime = Math.min(cumTime, pt[1]);
+                }
+                if (cumEnergy != Double.POSITIVE_INFINITY) {
+                    traj.put(gen, new double[] { cumEnergy, cumTime });
+                }
+            }
+        }
+        return traj;
+    }
+
+    /** Parses {raw total energy, time} from a simulator/surrogate output .tc. */
+    private static double[] parsePoint(File f) {
+        Double energy = null;
+        Double time = null;
+        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String s = line.trim();
+                Matcher me = P_ENERGY.matcher(s);
+                if (me.matches()) {
+                    energy = Double.parseDouble(me.group(1).replace(',', '.'));
+                    continue;
+                }
+                Matcher mt = P_TIME.matcher(s);
+                if (mt.matches()) {
+                    time = Double.parseDouble(mt.group(1).replace(',', '.'));
+                }
+                if (energy != null && time != null) {
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            return null;
+        }
+        return (energy != null && time != null) ? new double[] { energy, time } : null;
+    }
+
+    private static void writeMerged(File dat, TreeMap<Integer, double[]> real,
+            TreeMap<Integer, double[]> surr, int objective, String header) throws Exception {
+        try (BufferedWriter w = new BufferedWriter(new java.io.FileWriter(dat))) {
+            w.write(header + "\n");
+            for (Integer gen : real.keySet()) {
+                if (!surr.containsKey(gen)) {
+                    continue;
+                }
+                w.write(String.format(Locale.US, "%d  %.6f  %.6f%n",
+                        gen, real.get(gen)[objective], surr.get(gen)[objective]));
+            }
+        }
+    }
+
+    private static File writeGnuplot(File out, String base, String datName, String title, String ylabel)
+            throws Exception {
+        File gnu = new File(out, base + ".gnu");
+        try (BufferedWriter w = new BufferedWriter(new java.io.FileWriter(gnu))) {
+            w.write("# Auto-generated by SurrogateComparison\n");
+            w.write("set term pngcairo size 1100,700 enhanced font 'Arial,12'\n");
+            w.write("set output '" + base + ".png'\n");
+            w.write("set title '" + title + "'\n");
+            w.write("set xlabel 'Generation'\n");
+            w.write("set ylabel '" + ylabel + "'\n");
+            w.write("set grid\n");
+            w.write("set key right top\n");
+            w.write("plot \\\n");
+            w.write("  '" + datName + "' using 1:2 with linespoints lw 2 pt 7 title 'real simulator', \\\n");
+            w.write("  '" + datName + "' using 1:3 with linespoints lw 2 pt 5 title 'surrogate'\n");
+        }
+        return gnu;
+    }
+
+    private static boolean runGnuplot(File workDir, File script) {
+        try {
+            Process p = new ProcessBuilder("gnuplot", script.getName())
+                    .directory(workDir)
+                    .redirectErrorStream(true)
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .start();
+            return p.waitFor() == 0;
+        } catch (Exception e) {
+            return false;
         }
     }
 }

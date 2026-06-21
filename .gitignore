@@ -11,3 +11,4 @@ test.txt
 # Evolution run outputs
 /repro/out/
 /repro/out_surrogate/
+/repro/out_compare/
