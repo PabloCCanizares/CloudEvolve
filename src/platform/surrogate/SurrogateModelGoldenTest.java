@@ -9,6 +9,7 @@ import java.io.FileReader;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -44,7 +45,14 @@ public class SurrogateModelGoldenTest {
         Assume.assumeTrue("surrogate models not bundled at " + MODEL_DIR,
                 new File(MODEL_DIR, SurrogateModel.ENERGY_FILE).isFile()
                         && new File(MODEL_DIR, SurrogateModel.TIME_FILE).isFile());
+        // Pin the raw model fidelity, independent of the runtime plausibility guard.
+        System.setProperty(SurrogateModel.GUARD_PROPERTY, "none");
         model = SurrogateModel.load(MODEL_DIR);
+    }
+
+    @AfterClass
+    public static void clearGuard() {
+        System.clearProperty(SurrogateModel.GUARD_PROPERTY);
     }
 
     @Test

@@ -26,6 +26,7 @@ ITERATIONS=100
 MUT_CODE=0          # 0=high, 1=mid, 2=low
 RULE_BASE=1
 RERUNS=1
+GUARD=""            # plausibility guard: none|nonneg|clamp (empty = model default)
 BASE_OUT_DEFAULT="${REPRO_DIR}/out_surrogate"
 # Surrogate models live in the repo's lib/surrogate; override with -s if you run
 # this folder standalone (copy surrogate_*_lgbm.txt somewhere and point -s at it).
@@ -54,7 +55,7 @@ EOF
 ALGO="${ALGO_DEFAULT}"
 BASE_OUT="${BASE_OUT_DEFAULT}"
 
-while getopts ":a:n:i:m:r:o:p:s:l:h" opt; do
+while getopts ":a:n:i:m:r:o:p:s:l:g:h" opt; do
   case "$opt" in
     a) ALGO="$OPTARG" ;;
     n) EXPERIMENT_NAME="$OPTARG" ;;
@@ -64,6 +65,7 @@ while getopts ":a:n:i:m:r:o:p:s:l:h" opt; do
     o) BASE_OUT="$OPTARG" ;;
     p) INITIAL_PATH="$OPTARG" ;;
     s) MODEL_DIR="$OPTARG" ;;
+    g) GUARD="$OPTARG" ;;
     l) LAUNCHER_JAR="$OPTARG" ;;
     h|*) usage ;;
   esac
@@ -91,7 +93,10 @@ echo
 
 # The last argument (normally the simulator .jar) is reused as the surrogate
 # model directory: SurrogatePlatform reads it via the configured "simulator path".
-exec java -Duser.language=en -Duser.country=US -jar "${LAUNCHER_JAR}" \
+GUARD_OPT=""
+[ -n "${GUARD}" ] && GUARD_OPT="-Dcloudevolve.surrogate.guard=${GUARD}"
+
+exec java -Duser.language=en -Duser.country=US ${GUARD_OPT} -jar "${LAUNCHER_JAR}" \
   "${ALGO}" \
   "eSURROGATE" \
   "${EXP_PATH}" \

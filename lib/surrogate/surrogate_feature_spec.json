@@ -43,5 +43,15 @@
       "__UNK__",
       "mix_vm"
     ]
+  },
+  "target_bounds": {
+    "energy_kwh": [
+      2.64161,
+      24.74416
+    ],
+    "sim_time_sec": [
+      2770.1,
+      4074.1
+    ]
   }
 }

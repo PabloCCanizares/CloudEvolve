@@ -50,7 +50,7 @@ public final class HybridPlatform implements SimulatorPlatform {
     public static final String INCREMENT_PROPERTY = "cloudevolve.hybrid.increment";
 
     /** Surrogate feature columns, in training order (see surrogate_feature_spec.json). */
-    static final List<String> FEATURE_COLUMNS = Arrays.asList(
+    public static final List<String> FEATURE_COLUMNS = Arrays.asList(
             "vm.quantity", "vm.mips", "vm.pes", "vm.ram", "vm.bw", "vm.size", "vm.priority",
             "vm.schedulingInterval", "host.quantity", "host.ram", "host.ramspeed", "host.bw",
             "host.sto", "host.mips", "host.pes", "sto.capacity", "sto.maxTransferRate", "sto.latency",

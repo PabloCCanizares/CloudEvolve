@@ -13,6 +13,7 @@ test.txt
 /repro/out_surrogate/
 /repro/out_compare/
 /repro/out_hybrid/
+/repro/out_adversarial/
 
 # Hybrid backend re-training increment (collected at runtime)
 /repro/surrogate_increment.csv

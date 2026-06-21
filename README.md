@@ -134,6 +134,24 @@ python repro/retrain_surrogate.py --dataset <surrogate_dataset.parquet> \
 which merges the originals with the increment (up-weighting the worst-predicted
 rows) and re-exports the LightGBM `.txt` models in place.
 
+Two non-invasive safeguards make this robust against the optimiser exploiting the
+surrogate's errors (it will find any blind spot — e.g. a phantom near-zero-energy
+config):
+
+- **Plausibility guard** (`-Dcloudevolve.surrogate.guard=none|nonneg|clamp`,
+  default `nonneg`): clips predictions to ≥0 or to the training target range, so
+  impossible/extrapolated values can't become fake optima.
+- **Offline adversarial loop** ([`repro/adversarial_loop.sh`](repro/adversarial_loop.sh)):
+  evolve with the surrogate → **audit the final front with the real simulator**
+  ([`main.java.AuditFront`](src/main/java/AuditFront.java), which corrects the
+  reported front and harvests the exploited configs) → retrain → repeat. The GA
+  generates the hard examples, the simulator labels them, the model learns them —
+  all without touching the GA engine.
+
+```bash
+repro/adversarial_loop.sh -d <surrogate_dataset.parquet> -a eNSGAII -n Al_w1 -i 8 -k 3
+```
+
 ---
 
 ## Configuration

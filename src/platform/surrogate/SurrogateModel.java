@@ -4,9 +4,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The cloud surrogate: two LightGBM regressors (energy and time) sharing one
@@ -23,17 +27,27 @@ public final class SurrogateModel {
 
     public static final String ENERGY_FILE = "surrogate_energy_lgbm.txt";
     public static final String TIME_FILE = "surrogate_time_lgbm.txt";
+    public static final String SPEC_FILE = "surrogate_feature_spec.json";
+
+    /** Plausibility guard on predictions; see {@link #applyGuard}. */
+    public static final String GUARD_PROPERTY = "cloudevolve.surrogate.guard";
 
     private final LightGbmModel energy;
     private final LightGbmModel time;
     private final String[] featureNames;          // shared layout (energy model's)
     private final List<List<String>> categories;  // shared pandas_categorical
+    private final double[] energyBounds;          // {min,max} from the spec, or null
+    private final double[] timeBounds;
+    private final String guard;
 
-    private SurrogateModel(LightGbmModel energy, LightGbmModel time) {
+    private SurrogateModel(LightGbmModel energy, LightGbmModel time, double[][] bounds) {
         this.energy = energy;
         this.time = time;
         this.featureNames = energy.featureNames();
         this.categories = energy.pandasCategorical();
+        this.energyBounds = bounds != null ? bounds[0] : null;
+        this.timeBounds = bounds != null ? bounds[1] : null;
+        this.guard = System.getProperty(GUARD_PROPERTY, "nonneg").toLowerCase();
     }
 
     /**
@@ -51,7 +65,40 @@ public final class SurrogateModel {
             throw new IOException("Surrogate models not found in '" + d + "' (expected "
                     + ENERGY_FILE + " and " + TIME_FILE + ").");
         }
-        return new SurrogateModel(LightGbmModel.load(e.getPath()), LightGbmModel.load(t.getPath()));
+        return new SurrogateModel(LightGbmModel.load(e.getPath()), LightGbmModel.load(t.getPath()),
+                readTargetBounds(new File(d, SPEC_FILE)));
+    }
+
+    /**
+     * Reads {@code target_bounds} ([energyMin,energyMax],[timeMin,timeMax]) from the
+     * feature spec, in {@code targets} order. Returns null if the spec is absent or
+     * has no bounds (then the {@code clamp} guard degrades to {@code nonneg}).
+     */
+    private static double[][] readTargetBounds(File spec) {
+        if (!spec.isFile()) {
+            return null;
+        }
+        try {
+            String s = new String(Files.readAllBytes(spec.toPath()), StandardCharsets.UTF_8);
+            Matcher tm = Pattern.compile("\"targets\"\\s*:\\s*\\[\\s*\"([^\"]+)\"\\s*,\\s*\"([^\"]+)\"").matcher(s);
+            if (!tm.find()) {
+                return null;
+            }
+            String[] names = { tm.group(1), tm.group(2) };
+            String num = "(-?[0-9.eE+]+)";
+            double[][] bounds = new double[2][];
+            for (int i = 0; i < 2; i++) {
+                Matcher bm = Pattern.compile(Pattern.quote("\"" + names[i] + "\"")
+                        + "\\s*:\\s*\\[\\s*" + num + "\\s*,\\s*" + num + "\\s*\\]").matcher(s);
+                if (!bm.find()) {
+                    return null;
+                }
+                bounds[i] = new double[] { Double.parseDouble(bm.group(1)), Double.parseDouble(bm.group(2)) };
+            }
+            return bounds;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /** Parses a {@code key = value} cloud test case into a {@code name -> value} map. */
@@ -81,7 +128,39 @@ public final class SurrogateModel {
     /** Predicted {@code {energy_kwh, sim_time_sec}} for a parsed {@code .tc}. */
     public double[] predict(Map<String, String> testCase) {
         double[] x = features(testCase);
-        return new double[] { energy.predict(x), time.predict(x) };
+        return applyGuard(new double[] { energy.predict(x), time.predict(x) });
+    }
+
+    /**
+     * Plausibility guard (selected by {@code -Dcloudevolve.surrogate.guard}):
+     * <ul>
+     *   <li>{@code none} — raw model output;</li>
+     *   <li>{@code nonneg} (default) — clip to &ge; 0 (no-op on valid predictions,
+     *       but kills impossible negatives);</li>
+     *   <li>{@code clamp} — clamp to the training target range from the spec
+     *       (degrades to {@code nonneg} if no bounds), so the search cannot exploit
+     *       out-of-range extrapolation artifacts.</li>
+     * </ul>
+     * It is a safety net against the worst phantoms, not a substitute for auditing
+     * the final front with the real simulator.
+     */
+    double[] applyGuard(double[] energyTime) {
+        return guard(this.guard, energyTime, energyBounds, timeBounds);
+    }
+
+    /** Pure guard logic (see {@link #applyGuard}); static so it is trivially testable. */
+    static double[] guard(String mode, double[] energyTime, double[] energyBounds, double[] timeBounds) {
+        if ("none".equals(mode)) {
+            return energyTime;
+        }
+        if ("clamp".equals(mode) && energyBounds != null && timeBounds != null) {
+            return new double[] { clamp(energyTime[0], energyBounds), clamp(energyTime[1], timeBounds) };
+        }
+        return new double[] { Math.max(0.0, energyTime[0]), Math.max(0.0, energyTime[1]) };
+    }
+
+    private static double clamp(double v, double[] lohi) {
+        return Math.max(lohi[0], Math.min(lohi[1], v));
     }
 
     /** Builds the model feature vector from a {@code feature-name -> raw value} map. */
