@@ -56,13 +56,16 @@ public class SimulatorPlatformsTest {
         assertTrue(SimulatorPlatforms.of(ECloudSimulator.eCLOUDSIMSTORAGE) instanceof CloudSimStoragePlatform);
         assertTrue(SimulatorPlatforms.of(ECloudSimulator.eSIMGRID) instanceof SimGridPlatform);
         assertTrue(SimulatorPlatforms.of(ECloudSimulator.eSURROGATE) instanceof SurrogatePlatform);
+        assertTrue(SimulatorPlatforms.of(ECloudSimulator.eHYBRID) instanceof HybridPlatform);
     }
 
-    /** The surrogate backend keeps its own evolutionary subtree. */
+    /** The surrogate and hybrid backends keep their own evolutionary subtrees. */
     @Test
-    public void surrogateHasItsOwnBasePath() {
+    public void surrogateAndHybridHaveTheirOwnBasePath() {
         assertEquals("/localSpace/cloudEnergy/surrogate/evolutionary",
                 SimulatorPlatforms.of(ECloudSimulator.eSURROGATE).evolutionaryBasePath());
+        assertEquals("/localSpace/cloudEnergy/hybrid/evolutionary",
+                SimulatorPlatforms.of(ECloudSimulator.eHYBRID).evolutionaryBasePath());
     }
 
     /** A configured root is honoured, with each simulator keeping its subtree. */
@@ -81,7 +84,7 @@ public class SimulatorPlatformsTest {
     public void unsupportedSimulatorThrows() {
         for (ECloudSimulator s : ECloudSimulator.values()) {
             if (s == ECloudSimulator.eCLOUDSIMSTORAGE || s == ECloudSimulator.eSIMGRID
-                    || s == ECloudSimulator.eSURROGATE) {
+                    || s == ECloudSimulator.eSURROGATE || s == ECloudSimulator.eHYBRID) {
                 continue;
             }
             assertThrows("expected fail-fast for " + s,

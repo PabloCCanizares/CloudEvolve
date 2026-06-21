@@ -109,6 +109,31 @@ generation into two comparison graphs under `repro/out_compare/`:
 repro/compareSurrogate.sh --evolve -a eNSGAII -n Al_w1 -i 6   # needs gnuplot
 ```
 
+### Hybrid backend + re-training loop
+
+A fourth backend, `eHYBRID` ([`platform.HybridPlatform`](src/platform/HybridPlatform.java)),
+combines both: it evaluates with the surrogate but routes evaluations to the
+**real simulator every N generations**, so the accurate values flow back into
+NSGA-II's selection (self-correction) and are logged to `surrogate_increment.csv`.
+The real backend is injectable (`-Dcloudevolve.hybrid.real`, default
+CloudSim-Storage), so the hybrid composes with any simulator.
+
+```bash
+repro/launcherHybrid.sh -a eNSGAII -n Al_w1 -i 20 -e 5   # real simulator every 5 generations
+```
+
+Because the hybrid spends its real budget where the search converges (the region
+the surrogate is weakest), the increment accumulates the **hard examples** —
+active learning by construction. Feed them back into the model with:
+
+```bash
+python repro/retrain_surrogate.py --dataset <surrogate_dataset.parquet> \
+       --increment repro/surrogate_increment.csv --out lib/surrogate --emphasize 3.0
+```
+
+which merges the originals with the increment (up-weighting the worst-predicted
+rows) and re-exports the LightGBM `.txt` models in place.
+
 ---
 
 ## Configuration

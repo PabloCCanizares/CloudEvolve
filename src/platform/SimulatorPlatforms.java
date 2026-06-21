@@ -12,6 +12,9 @@ public final class SimulatorPlatforms {
     private static final SimulatorPlatform CLOUDSIM_STORAGE = new CloudSimStoragePlatform();
     private static final SimulatorPlatform SIMGRID = new SimGridPlatform();
     private static final SimulatorPlatform SURROGATE = new SurrogatePlatform();
+    // Declared last: HybridPlatform's constructor calls of(...) for its real
+    // backend, which only reads the fields declared above.
+    private static final SimulatorPlatform HYBRID = new HybridPlatform();
 
     private SimulatorPlatforms() {
     }
@@ -35,6 +38,9 @@ public final class SimulatorPlatforms {
         }
         if (simulator == ECloudSimulator.eSURROGATE) {
             return SURROGATE;
+        }
+        if (simulator == ECloudSimulator.eHYBRID) {
+            return HYBRID;
         }
         throw new IllegalArgumentException("Unsupported simulator (no platform strategy): " + simulator);
     }

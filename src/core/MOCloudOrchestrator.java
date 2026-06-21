@@ -54,7 +54,9 @@ public abstract class MOCloudOrchestrator {
 			// "eCloudSimStorage", "eSimGrid" or "eSURROGATE" are all recognised
 			// (the previous case-sensitive check only worked via the default).
 			String strSimLower = strSim.toLowerCase();
-			if (strSimLower.contains("surrogate"))
+			if (strSimLower.contains("hybrid"))
+				eSimulator = ECloudSimulator.eHYBRID;
+			else if (strSimLower.contains("surrogate"))
 				eSimulator = ECloudSimulator.eSURROGATE;
 			else if (strSimLower.contains("simgrid"))
 				eSimulator = ECloudSimulator.eSIMGRID;
