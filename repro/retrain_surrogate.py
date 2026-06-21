@@ -97,7 +97,11 @@ def main():
     if os.path.exists(args.increment) and os.path.getsize(args.increment) > 0:
         inc = pd.read_csv(args.increment)
         inc = inc.dropna(subset=targets)
-        print(f"increment (hard) rows : {len(inc)}")
+        # Drop failed simulator runs (energy/time = -1 sentinel, or non-positive).
+        before = len(inc)
+        inc = inc[(inc[targets] > 0).all(axis=1)]
+        dropped = before - len(inc)
+        print(f"increment (hard) rows : {len(inc)}" + (f"  ({dropped} invalid dropped)" if dropped else ""))
     else:
         inc = pd.DataFrame(columns=feats + targets)
         print("increment: none found — retraining on the original set only")
