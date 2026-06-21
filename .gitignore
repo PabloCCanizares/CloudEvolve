@@ -17,3 +17,8 @@ test.txt
 
 # Hybrid backend re-training increment (collected at runtime)
 /repro/surrogate_increment.csv
+
+# Active-learning / adversarial-demo byproducts (regenerable)
+/repro/active_learning/selected_increment.csv
+/repro/adversarial_demo/work/
+/repro/adversarial_demo/
